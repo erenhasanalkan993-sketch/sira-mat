@@ -1093,3 +1093,51 @@ select:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* SolbekErsin sosyal medya bağlantıları */
+.social-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.social-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  color: var(--green);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: rgba(180, 255, 112, 0.04);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.social-links a:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  border-color: var(--green);
+  background: rgba(180, 255, 112, 0.09);
+}
+
+@media (max-width: 560px) {
+  .site-footer {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .social-links {
+    width: 100%;
+    justify-content: center;
+    order: 2;
+  }
+}
