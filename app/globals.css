@@ -70,6 +70,7 @@ select:focus-visible {
   background: var(--green);
 }
 
+/* Ana sayfa arka planı */
 .site-shell {
   position: relative;
   isolation: isolate;
@@ -77,8 +78,16 @@ select:focus-visible {
   overflow: hidden;
   padding: 0 7.5%;
   background:
-    radial-gradient(ellipse at 75% 7%, rgba(104, 255, 88, 0.075), transparent 32%),
-    radial-gradient(ellipse at 12% 42%, rgba(74, 148, 64, 0.045), transparent 30%),
+    radial-gradient(
+      ellipse at 75% 7%,
+      rgba(104, 255, 88, 0.075),
+      transparent 32%
+    ),
+    radial-gradient(
+      ellipse at 12% 42%,
+      rgba(74, 148, 64, 0.045),
+      transparent 30%
+    ),
     #080b09;
 }
 
@@ -107,6 +116,7 @@ select:focus-visible {
   animation-delay: -5s;
 }
 
+/* Üst menü */
 .topbar {
   position: relative;
   z-index: 2;
@@ -171,7 +181,10 @@ select:focus-visible {
   background: rgba(255, 255, 255, 0.035);
   font-size: 12px;
   font-weight: 700;
-  transition: border-color 200ms ease, background 200ms ease, transform 200ms ease;
+  transition:
+    border-color 200ms ease,
+    background 200ms ease,
+    transform 200ms ease;
 }
 
 .admin-toggle:hover {
@@ -184,6 +197,7 @@ select:focus-visible {
   color: var(--green);
 }
 
+/* Ana tanıtım alanı */
 .hero {
   position: relative;
   display: grid;
@@ -230,12 +244,15 @@ select:focus-visible {
   animation: dot-pulse 2s ease-out infinite;
 }
 
-.hero h1 {
+/* Başlık: normal başlık biçimi ve biraz daha küçük */
+.hero h1,
+.hero .hero-title {
   margin: 27px 0 19px;
-  font-size: clamp(42px, 5.4vw, 72px);
-  line-height: 1.04;
+  font-size: clamp(32px, 3.7vw, 52px);
+  line-height: 1.12;
   font-weight: 900;
-  letter-spacing: -4px;
+  letter-spacing: -1.8px;
+  text-transform: none;
 }
 
 .hero h1 span {
@@ -275,6 +292,7 @@ select:focus-visible {
   transform: translateY(4px);
 }
 
+/* Satranç taşları alanı */
 .hero-art {
   position: relative;
   display: grid;
@@ -294,9 +312,57 @@ select:focus-visible {
   animation: glow-breathe 5s ease-in-out infinite;
 }
 
+.hero-back-pieces {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero-piece {
+  position: absolute;
+  display: block;
+  color: #e0ead9;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(42px, 5vw, 64px);
+  line-height: 1;
+  opacity: 0.92;
+  text-shadow:
+    0 0 14px rgba(180, 255, 112, 0.25),
+    0 5px 16px rgba(0, 0, 0, 0.6);
+  animation: chess-piece-float 5s ease-in-out infinite;
+}
+
+.hero-rook {
+  top: 16%;
+  left: 7%;
+  animation-delay: -1s;
+}
+
+.hero-bishop {
+  top: 17%;
+  right: 7%;
+  color: #d5e5ca;
+  animation-delay: -2s;
+}
+
+.hero-queen {
+  bottom: 20%;
+  left: 14%;
+  color: #c4ff8a;
+  animation-delay: -3s;
+}
+
+.hero-king {
+  right: 14%;
+  bottom: 20%;
+  color: #f0f8e9;
+  animation-delay: -4s;
+}
+
 .hero-knight {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   color: var(--green);
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(150px, 20vw, 235px);
@@ -328,24 +394,48 @@ select:focus-visible {
   animation: orbit-turn 32s linear infinite reverse;
 }
 
+/* Atın altındaki yeni açıklama */
 .hero-art-label {
   position: absolute;
-  bottom: 12px;
+  z-index: 3;
+  bottom: 8px;
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: #9ba99b;
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 2px;
+  justify-content: center;
+  gap: 9px;
+  width: calc(100% - 20px);
+  max-width: 370px;
+  color: #b1beb0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  line-height: 1.6;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
+.hero-art-label > span:last-child {
+  min-width: 0;
+}
+
+/* Oyuncu listesi üstte, katılma alanı altta */
 .main-grid {
   display: grid;
-  grid-template-columns: minmax(270px, 0.82fr) minmax(0, 1.18fr);
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: 23px;
+  width: 100%;
+  max-width: 850px;
+  margin: 0 auto;
   padding: 38px 0 65px;
+}
+
+.queue-panel {
+  order: 1;
+}
+
+.join-panel {
+  order: 2;
 }
 
 .panel {
@@ -402,6 +492,7 @@ select:focus-visible {
   letter-spacing: -0.7px;
 }
 
+/* Sıraya katılma formu */
 .form-content {
   padding: 22px 24px 24px;
 }
@@ -467,7 +558,10 @@ select:focus-visible {
   box-shadow: 0 5px 24px rgba(161, 255, 94, 0.08);
   font-size: 12px;
   font-weight: 900;
-  transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    filter 200ms ease;
 }
 
 .primary-button:hover:not(:disabled) {
@@ -581,6 +675,7 @@ select:focus-visible {
   background: rgba(180, 255, 112, 0.055);
 }
 
+/* Oyuncu sırası */
 .queue-panel {
   padding: 24px;
 }
@@ -691,7 +786,10 @@ select:focus-visible {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.018);
   animation: reveal-up 300ms ease both;
-  transition: transform 200ms ease, border-color 200ms ease, background 200ms ease;
+  transition:
+    transform 200ms ease,
+    border-color 200ms ease,
+    background 200ms ease;
 }
 
 .player-row:hover {
@@ -771,31 +869,7 @@ select:focus-visible {
   background: rgba(255, 115, 115, 0.14);
 }
 
-.queue-footer {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.065);
-}
-
-.queue-footer > span:first-child {
-  color: var(--green);
-  font-size: 19px;
-}
-
-.queue-footer p {
-  flex: 1;
-  margin: 0;
-  color: #849084;
-  font-size: 10px;
-}
-
-.footer-spark {
-  color: rgba(180, 255, 112, 0.7);
-}
-
+/* Alt bilgi alanı */
 .site-footer {
   display: flex;
   align-items: center;
@@ -823,11 +897,48 @@ select:focus-visible {
   letter-spacing: 1.5px;
 }
 
+/* Sosyal medya bağlantıları */
+.social-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.social-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  color: var(--green);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: rgba(180, 255, 112, 0.04);
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.social-links a:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  border-color: var(--green);
+  background: rgba(180, 255, 112, 0.09);
+}
+
+/* Animasyonlar */
 @keyframes reveal-up {
   from {
     opacity: 0;
     transform: translateY(14px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -835,19 +946,34 @@ select:focus-visible {
 }
 
 @keyframes knight-float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-9px);
   }
 }
 
+@keyframes chess-piece-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-7px);
+  }
+}
+
 @keyframes glow-breathe {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.55;
     transform: scale(0.9);
   }
+
   50% {
     opacity: 1;
     transform: scale(1.12);
@@ -859,6 +985,7 @@ select:focus-visible {
     opacity: 0.8;
     transform: scale(0.75);
   }
+
   100% {
     opacity: 0;
     transform: scale(1.9);
@@ -875,11 +1002,13 @@ select:focus-visible {
   from {
     transform: translate3d(0, 0, 0);
   }
+
   to {
     transform: translate3d(-30px, 35px, 0);
   }
 }
 
+/* Geniş ekranlar */
 @media (min-width: 1400px) {
   .site-shell {
     padding-right: max(7.5%, calc((100% - 1220px) / 2));
@@ -887,6 +1016,7 @@ select:focus-visible {
   }
 }
 
+/* Tablet */
 @media (max-width: 900px) {
   .site-shell {
     padding-right: 5%;
@@ -897,8 +1027,9 @@ select:focus-visible {
     min-height: 365px;
   }
 
-  .hero h1 {
-    letter-spacing: -2.8px;
+  .hero h1,
+  .hero .hero-title {
+    letter-spacing: -1.3px;
   }
 
   .hero-art {
@@ -907,6 +1038,10 @@ select:focus-visible {
 
   .hero-knight {
     font-size: 175px;
+  }
+
+  .hero-piece {
+    font-size: 48px;
   }
 
   .orbit-one {
@@ -921,12 +1056,12 @@ select:focus-visible {
 
   .main-grid {
     grid-template-columns: minmax(0, 1fr);
-    gap: 20px;
     max-width: 680px;
-    margin: 0 auto;
+    gap: 20px;
   }
 }
 
+/* Mobil */
 @media (max-width: 560px) {
   .site-shell {
     padding-right: 18px;
@@ -965,10 +1100,12 @@ select:focus-visible {
     padding: 47px 0 29px;
   }
 
-  .hero h1 {
+  .hero h1,
+  .hero .hero-title {
     margin-top: 23px;
-    font-size: clamp(43px, 12vw, 62px);
-    letter-spacing: -2.5px;
+    font-size: clamp(32px, 9vw, 43px);
+    letter-spacing: -1.3px;
+    line-height: 1.15;
   }
 
   .hero-description {
@@ -977,12 +1114,32 @@ select:focus-visible {
   }
 
   .hero-art {
-    min-height: 225px;
+    min-height: 250px;
     margin-top: 10px;
   }
 
   .hero-knight {
-    font-size: 165px;
+    font-size: 155px;
+  }
+
+  .hero-piece {
+    font-size: 40px;
+  }
+
+  .hero-rook {
+    left: 3%;
+  }
+
+  .hero-bishop {
+    right: 3%;
+  }
+
+  .hero-queen {
+    left: 9%;
+  }
+
+  .hero-king {
+    right: 9%;
   }
 
   .orbit-one {
@@ -996,7 +1153,12 @@ select:focus-visible {
   }
 
   .hero-art-label {
-    bottom: 3px;
+    bottom: 2px;
+    width: calc(100% - 8px);
+    max-width: 330px;
+    gap: 7px;
+    font-size: 10px;
+    line-height: 1.5;
   }
 
   .main-grid {
@@ -1067,9 +1229,10 @@ select:focus-visible {
 
   .site-footer {
     flex-wrap: wrap;
-    justify-content: space-between;
+    justify-content: center;
     gap: 12px;
     padding: 20px 0;
+    text-align: center;
   }
 
   .site-footer > span {
@@ -1081,8 +1244,16 @@ select:focus-visible {
     order: 3;
     width: 100%;
   }
+
+  .social-links {
+    width: 100%;
+    justify-content: center;
+    gap: 10px;
+    order: 2;
+  }
 }
 
+/* Hareket azaltma erişilebilirlik ayarı */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -1091,53 +1262,5 @@ select:focus-visible {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-}
-
-/* SolbekErsin sosyal medya bağlantıları */
-.social-links {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  flex-wrap: wrap;
-}
-
-.social-links a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 12px;
-  color: var(--green);
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: rgba(180, 255, 112, 0.04);
-  font-size: 11px;
-  font-weight: 700;
-  text-decoration: none;
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease,
-    background 0.2s ease,
-    border-color 0.2s ease;
-}
-
-.social-links a:hover {
-  opacity: 0.9;
-  transform: translateY(-2px);
-  border-color: var(--green);
-  background: rgba(180, 255, 112, 0.09);
-}
-
-@media (max-width: 560px) {
-  .site-footer {
-    justify-content: center;
-    text-align: center;
-  }
-
-  .social-links {
-    width: 100%;
-    justify-content: center;
-    order: 2;
   }
 }

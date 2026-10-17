@@ -139,6 +139,7 @@ export default function Home() {
       if (lastCalled?.called_at) {
         const elapsed =
           Date.now() - new Date(lastCalled.called_at).getTime();
+
         const remaining = Math.ceil((60000 - elapsed) / 1000);
 
         if (remaining > 0) {
@@ -285,6 +286,7 @@ export default function Home() {
           <div className="orbit orbit-two" />
           <div className="hero-glow" />
           <span className="hero-knight">♞</span>
+
           <div className="hero-art-label">
             <span className="live-dot" />
             YOUR NEXT MOVE
@@ -503,8 +505,11 @@ export default function Home() {
           ) : players.length === 0 ? (
             <div className="empty-state">
               <div className="empty-chess">♙</div>
-              <strong>Tahta seni bekliyor</strong>
-              <p>Henüz sırada oyuncu yok. İlk hamleyi sen yap!</p>
+              <strong>
+                Rakibini bul, oyun süreni seç ve satranç mücadelesine katıl.
+                Tahta seni bekliyor.
+              </strong>
+              <p>İlk hamleyi sen yap!</p>
             </div>
           ) : (
             <div className="player-list">
@@ -523,7 +528,9 @@ export default function Home() {
                     <span>{player.platform}</span>
                   </div>
 
-                  <span className="time-badge">{player.time_control}</span>
+                  <span className="time-badge">
+                    {player.time_control}
+                  </span>
 
                   {admin && (
                     <button
