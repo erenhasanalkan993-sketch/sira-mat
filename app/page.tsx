@@ -1,4 +1,4 @@
-```tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -19,6 +19,13 @@ type Player = {
   time_control: TimeControl;
 };
 
+type ExistingPlayer = {
+  id: number;
+  status: string;
+  called_at: string | null;
+  created_at: string;
+};
+
 const timeControls: TimeControl[] = [
   "1+0",
   "3+0",
@@ -34,13 +41,16 @@ export default function Home() {
     useState<"Lichess" | "Chess.com">("Lichess");
   const [timeControl, setTimeControl] =
     useState<TimeControl>("3+0");
+
   const [players, setPlayers] = useState<Player[]>([]);
   const [currentPlayer, setCurrentPlayer] =
     useState<Player | null>(null);
+
   const [adminMode, setAdminMode] = useState(false);
   const [password, setPassword] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
   const [admin, setAdmin] = useState(false);
+
   const [joining, setJoining] = useState(false);
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(true);
@@ -115,7 +125,7 @@ export default function Home() {
     setMessage("");
 
     try {
-      const { data: existing, error: checkError } = await supabase
+      const { data, error: checkError } = await supabase
         .from("queue_players")
         .select("id, status, called_at, created_at")
         .ilike("username", name)
@@ -127,13 +137,20 @@ export default function Home() {
         return;
       }
 
-      if (existing?.some((player) => player.status === "waiting")) {
+      const existing = (data ?? []) as ExistingPlayer[];
+
+      const alreadyWaiting = existing.some(
+        (player) => player.status === "waiting"
+      );
+
+      if (alreadyWaiting) {
         setMessage("Bu nick zaten sırada.");
         return;
       }
 
-      const lastCalled = existing?.find(
-        (player) => player.status === "called" && player.called_at
+      const lastCalled = existing.find(
+        (player) =>
+          player.status === "called" && Boolean(player.called_at)
       );
 
       if (lastCalled?.called_at) {
@@ -144,7 +161,9 @@ export default function Home() {
 
         if (remaining > 0) {
           setMessage(
-            `Bu nick için tekrar sıraya girmek üzere ${remaining} saniye beklemelisin.`
+            "Bu nick için tekrar sıraya girmek üzere " +
+              remaining +
+              " saniye beklemelisin."
           );
           return;
         }
@@ -167,6 +186,9 @@ export default function Home() {
       setUsername("");
       setMessage("Başarılı! Sıranın sonuna eklendin. ♟");
       await loadPlayers();
+    } catch (error) {
+      console.error("Sıraya katılma hatası:", error);
+      setMessage("Beklenmeyen bir hata oluştu. Lütfen tekrar dene.");
     } finally {
       setJoining(false);
     }
@@ -234,7 +256,6 @@ export default function Home() {
       <div className="ambient ambient-two" />
 
       <header className="topbar">
-        {/* Logo ve marka adı */}
         <a
           href="/"
           aria-label="SolbekErsin ana sayfa"
@@ -324,12 +345,10 @@ export default function Home() {
           <div className="orbit orbit-two" />
           <div className="hero-glow" />
 
-          {/* Ana taş: At */}
           <span className="hero-knight" aria-hidden="true">
             ♞
           </span>
 
-          {/* Şah */}
           <span
             className="hero-extra-piece hero-king"
             style={{ top: "15%", right: "12%" }}
@@ -338,7 +357,6 @@ export default function Home() {
             ♚
           </span>
 
-          {/* Vezir */}
           <span
             className="hero-extra-piece hero-queen"
             style={{ bottom: "20%", left: "10%" }}
@@ -347,7 +365,6 @@ export default function Home() {
             ♛
           </span>
 
-          {/* Fil */}
           <span
             className="hero-extra-piece hero-bishop"
             style={{ top: "18%", left: "12%" }}
@@ -356,7 +373,6 @@ export default function Home() {
             ♝
           </span>
 
-          {/* Tek piyon */}
           <span
             className="hero-extra-piece"
             style={{
@@ -371,7 +387,8 @@ export default function Home() {
 
           <div className="hero-art-label">
             <span className="live-dot" />
-            Her oyun yeni bir macera, Satrançdaki sonsuz olasılıkları birlikte yaşayalım.
+            Her oyun yeni bir macera, satrancın sonsuz olasılıklarını
+            birlikte yaşayalım.
           </div>
         </div>
       </section>
@@ -524,12 +541,10 @@ export default function Home() {
                         className="profile-link"
                         href={
                           currentPlayer.platform === "Lichess"
-                            ? `https://lichess.org/@/${encodeURIComponent(
-                                currentPlayer.username
-                              )}`
-                            : `https://www.chess.com/member/${encodeURIComponent(
-                                currentPlayer.username
-                              )}`
+                            ? "https://lichess.org/@/" +
+                              encodeURIComponent(currentPlayer.username)
+                            : "https://www.chess.com/member/" +
+                              encodeURIComponent(currentPlayer.username)
                         }
                         target="_blank"
                         rel="noreferrer"
@@ -621,7 +636,10 @@ export default function Home() {
                     <button
                       className="remove-button"
                       onClick={() => void removePlayer(player.id)}
-                      aria-label={`${player.username} oyuncusunu sıradan çıkar`}
+                      aria-label={
+                        player.username +
+                        " oyuncusunu sıradan çıkar"
+                      }
                       title="Oyuncuyu sıradan çıkar"
                     >
                       ×
@@ -698,4 +716,3 @@ export default function Home() {
     </main>
   );
 }
-```
