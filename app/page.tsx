@@ -18,6 +18,7 @@ export default function Home() {
   const [adminMode, setAdminMode] = useState(false);
   const [password, setPassword] = useState("");
   const [admin, setAdmin] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
   
 
 async function loadPlayers() {
@@ -177,6 +178,14 @@ useEffect(() => {
           {!admin ? (
             <>
               <p className="muted">Yönetici ekranını açmak için şimdilik deneme şifresi: <strong>mat123</strong></p>
+              <label htmlFor="adminEmail">Yönetici e-postası</label>
+<input
+  id="adminEmail"
+  type="email"
+  value={adminEmail}
+  onChange={(event) => setAdminEmail(event.target.value)}
+  placeholder="E-posta adresin"
+/>
               <label htmlFor="password">Yönetici şifresi</label>
               <input
                 id="password"
@@ -186,11 +195,32 @@ useEffect(() => {
                 placeholder="Şifre"
               />
               <button
-                className="primaryButton"
-                onClick={() => {
-                  if (password === "mat123") setAdmin(true);
-                  else alert("Şifre yanlış.");
-                }}
+                onClick={async () => {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: adminEmail.trim(),
+    password,
+  });
+
+  if (error || !data.user) {
+    alert("E-posta veya şifre hatalı.");
+    return;
+  }
+
+  const { data: adminRecord, error: adminError } = await supabase
+    .from("queue_admins")
+    .select("user_id")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+
+  if (adminError || !adminRecord) {
+    await supabase.auth.signOut();
+    alert("Bu hesabın yönetici yetkisi yok.");
+    return;
+  }
+
+  setAdmin(true);
+}}
+                
               >
                 Giriş yap
               </button>
