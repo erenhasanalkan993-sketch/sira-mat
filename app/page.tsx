@@ -103,6 +103,7 @@ async function callNextPlayer() {
 
 
   
+
 async function joinQueue() {
   if (joining) return;
 
@@ -119,8 +120,7 @@ async function joinQueue() {
   try {
     const { data: existing, error: checkError } = await supabase
       .from("queue_players")
-      .select("id, status, called_at")
-      .eq("platform", platform)
+      .select("id, status, called_at, created_at")
       .ilike("username", name)
       .in("status", ["waiting", "called"])
       .order("created_at", { ascending: false });
@@ -131,7 +131,7 @@ async function joinQueue() {
     }
 
     if (existing?.some((player) => player.status === "waiting")) {
-      setMessage("Bu oyuncu zaten sırada.");
+      setMessage("Bu nick zaten sırada.");
       return;
     }
 
@@ -140,12 +140,13 @@ async function joinQueue() {
     );
 
     if (lastCalled?.called_at) {
-      const elapsed = Date.now() - new Date(lastCalled.called_at).getTime();
+      const elapsed =
+        Date.now() - new Date(lastCalled.called_at).getTime();
       const remaining = Math.ceil((60000 - elapsed) / 1000);
 
       if (remaining > 0) {
         setMessage(
-          `Tekrar sıraya girmek için ${remaining} saniye beklemelisin.`
+          `Bu nick için tekrar sıraya girmek üzere ${remaining} saniye beklemelisin.`
         );
         return;
       }
@@ -172,6 +173,7 @@ async function joinQueue() {
     setJoining(false);
   }
 }
+
 
 
   function finishMatch() {
