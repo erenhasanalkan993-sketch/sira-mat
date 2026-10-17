@@ -604,10 +604,9 @@ export default function Home() {
             <div className="empty-state">
               <div className="empty-chess">♙</div>
               <strong>
-                Rakibini bul, oyun süreni seç ve satranç mücadelesine katıl.
-                Tahta seni bekliyor.
+                Kullanıcı adını yaz, platformu ve zaman temposunu seç, SolbekErsin'le maç yaparak hünerlerini göster.
               </strong>
-              <p>İlk hamleyi sen yap!</p>
+              <p></p>
             </div>
           ) : (
             <div className="player-list">
