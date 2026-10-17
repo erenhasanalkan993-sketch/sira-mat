@@ -1,4 +1,4 @@
-
+```tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -184,7 +184,7 @@ export default function Home() {
       }
 
       setUsername("");
-      setMessage("Başarılı! Sıranın sonuna eklendin. ♟");
+      setMessage("Başarılı! Sıranın sonuna eklendin.");
       await loadPlayers();
     } catch (error) {
       console.error("Sıraya katılma hatası:", error);
@@ -334,60 +334,6 @@ export default function Home() {
             Kullanıcı adını gir, platformunu ve maç süresini seç.
             SolbekErsin'e karşı oyna, gücünü göster!
           </p>
-
-          
-        </div>
-
-        <div className="hero-art" aria-label="Satranç taşları">
-          <div className="orbit orbit-one" />
-          <div className="orbit orbit-two" />
-          <div className="hero-glow" />
-
-          <span className="hero-knight" aria-hidden="true">
-            ♞
-          </span>
-
-          <span
-            className="hero-extra-piece hero-king"
-            style={{ top: "15%", right: "12%" }}
-            aria-hidden="true"
-          >
-            ♚
-          </span>
-
-          <span
-            className="hero-extra-piece hero-queen"
-            style={{ bottom: "20%", left: "10%" }}
-            aria-hidden="true"
-          >
-            ♛
-          </span>
-
-          <span
-            className="hero-extra-piece hero-bishop"
-            style={{ top: "18%", left: "12%" }}
-            aria-hidden="true"
-          >
-            ♝
-          </span>
-
-          <span
-            className="hero-extra-piece"
-            style={{
-              bottom: "17%",
-              right: "14%",
-              fontSize: "clamp(32px, 4vw, 48px)",
-            }}
-            aria-hidden="true"
-          >
-            ♟
-          </span>
-
-          <div className="hero-art-label">
-            <span className="live-dot" />
-            Her oyun yeni bir macera, satrancın sonsuz olasılıklarını
-            birlikte yaşayalım.
-          </div>
         </div>
       </section>
 
@@ -662,7 +608,7 @@ export default function Home() {
           href="/"
           aria-label="SolbekErsin ana sayfa"
         >
-          ♞ SolbekErsin
+          SolbekErsin
         </a>
 
         <span>STRATEJİNİ KONUŞTUR.</span>
@@ -714,3 +660,4 @@ export default function Home() {
     </main>
   );
 }
+```
