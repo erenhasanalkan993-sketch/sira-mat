@@ -233,7 +233,7 @@ export default function Home() {
       <div className="ambient ambient-two" />
 
       <header className="topbar">
-        <a href="/" className="...">
+       <a href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
   <img
     src="/logo.png"
     alt="SolbekErsin"
@@ -244,6 +244,9 @@ export default function Home() {
       display: "block",
     }}
   />
+  <span style={{ fontSize: "16px", fontWeight: 600, color: "inherit" }}>
+    SolbekErsin
+  </span>
 </a>
 
         <button
