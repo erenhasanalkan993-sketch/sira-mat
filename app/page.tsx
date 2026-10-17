@@ -105,9 +105,19 @@ useEffect(() => {
     setCurrentPlayer(null);
   }
 
-  function removePlayer(id: number) {
-    setPlayers((old) => old.filter((player) => player.id !== id));
+ async function removePlayer(id: number) {
+  const { error } = await supabase
+    .from("queue_players")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    alert("Oyuncu silinemedi: " + error.message);
+    return;
   }
+
+  await loadPlayers();
+}
 
   return (
     <main className="page">
