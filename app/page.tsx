@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,18 +11,11 @@ type TimeControl =
   | "10+0"
   | "15+10";
 
-type Platform = "Lichess" | "Chess.com";
-
 type Player = {
   id: number;
   username: string;
-  platform: Platform;
+  platform: "Lichess" | "Chess.com";
   time_control: TimeControl;
-};
-
-type QueueIdentity = {
-  username: string;
-  platform: Platform;
 };
 
 const timeControls: TimeControl[] = [
@@ -35,16 +27,15 @@ const timeControls: TimeControl[] = [
   "15+10",
 ];
 
-const IDENTITY_KEY = "sira-mat-queue-identity";
-
 export default function Home() {
   const [username, setUsername] = useState("");
-  const [platform, setPlatform] = useState<Platform>("Lichess");
-  const [timeControl, setTimeControl] = useState<TimeControl>("3+0");
+  const [platform, setPlatform] =
+    useState<"Lichess" | "Chess.com">("Lichess");
+  const [timeControl, setTimeControl] =
+    useState<TimeControl>("3+0");
   const [players, setPlayers] = useState<Player[]>([]);
-  const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
-  const [myQueuePlayer, setMyQueuePlayer] =
-    useState<QueueIdentity | null>(null);
+  const [currentPlayer, setCurrentPlayer] =
+    useState<Player | null>(null);
   const [adminMode, setAdminMode] = useState(false);
   const [password, setPassword] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
@@ -71,24 +62,6 @@ export default function Home() {
   }
 
   useEffect(() => {
-    try {
-      const savedIdentity = localStorage.getItem(IDENTITY_KEY);
-
-      if (savedIdentity) {
-        const parsed = JSON.parse(savedIdentity) as QueueIdentity;
-
-        if (
-          typeof parsed.username === "string" &&
-          (parsed.platform === "Lichess" ||
-            parsed.platform === "Chess.com")
-        ) {
-          setMyQueuePlayer(parsed);
-        }
-      }
-    } catch {
-      localStorage.removeItem(IDENTITY_KEY);
-    }
-
     void loadPlayers();
 
     const interval = setInterval(() => {
@@ -98,190 +71,110 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  async function callNextPlayer() {
-    if (players.length === 0) {
-      setMessage("Sırada bekleyen oyuncu yok.");
+  
+async function callNextPlayer() {
+  if (players.length === 0) {
+    setMessage("Sırada bekleyen oyuncu yok.");
+    return;
+  }
+
+  const nextPlayer = players[0];
+
+  const { error } = await supabase
+    .from("queue_players")
+    .update({
+      status: "called",
+      called_at: new Date().toISOString(),
+    })
+    .eq("id", nextPlayer.id)
+    .eq("status", "waiting");
+
+  if (error) {
+    setMessage("Oyuncu çağrılamadı: " + error.message);
+    return;
+  }
+
+  setCurrentPlayer(nextPlayer);
+  setPlayers((old) =>
+    old.filter((player) => player.id !== nextPlayer.id)
+  );
+  setMessage("");
+}
+
+
+  
+
+async function joinQueue() {
+  if (joining) return;
+
+  const name = username.trim();
+
+  if (!name) {
+    setMessage("Lütfen kullanıcı adını yaz.");
+    return;
+  }
+
+  setJoining(true);
+  setMessage("");
+
+  try {
+    const { data: existing, error: checkError } = await supabase
+      .from("queue_players")
+      .select("id, status, called_at, created_at")
+      .ilike("username", name)
+      .in("status", ["waiting", "called"])
+      .order("created_at", { ascending: false });
+
+    if (checkError) {
+      setMessage("Sıra kontrol edilemedi: " + checkError.message);
       return;
     }
 
-    const nextPlayer = players[0];
+    if (existing?.some((player) => player.status === "waiting")) {
+      setMessage("Bu nick zaten sırada.");
+      return;
+    }
+
+    const lastCalled = existing?.find(
+      (player) => player.status === "called" && player.called_at
+    );
+
+    if (lastCalled?.called_at) {
+      const elapsed =
+        Date.now() - new Date(lastCalled.called_at).getTime();
+      const remaining = Math.ceil((60000 - elapsed) / 1000);
+
+      if (remaining > 0) {
+        setMessage(
+          `Bu nick için tekrar sıraya girmek üzere ${remaining} saniye beklemelisin.`
+        );
+        return;
+      }
+    }
 
     const { error } = await supabase
       .from("queue_players")
-      .update({
-        status: "called",
-        called_at: new Date().toISOString(),
-      })
-      .eq("id", nextPlayer.id)
-      .eq("status", "waiting");
-
-    if (error) {
-      setMessage("Oyuncu çağrılamadı: " + error.message);
-      return;
-    }
-
-    setCurrentPlayer(nextPlayer);
-    setPlayers((old) =>
-      old.filter((player) => player.id !== nextPlayer.id)
-    );
-    setMessage("");
-  }
-
-  async function joinQueue() {
-    if (joining) return;
-
-    const name = username.trim();
-
-    if (!name) {
-      setMessage("Lütfen kullanıcı adını yaz.");
-      return;
-    }
-
-    setJoining(true);
-    setMessage("");
-
-    try {
-      const { data: existing, error: checkError } = await supabase
-        .from("queue_players")
-        .select("id, status, called_at, created_at")
-        .ilike("username", name)
-        .in("status", ["waiting", "called"])
-        .order("created_at", { ascending: false });
-
-      if (checkError) {
-        setMessage("Sıra kontrol edilemedi: " + checkError.message);
-        return;
-      }
-
-      if (existing?.some((player) => player.status === "waiting")) {
-        setMessage("Bu nick zaten sırada.");
-        return;
-      }
-
-      const lastCalled = existing?.find(
-        (player) => player.status === "called" && player.called_at
-      );
-
-      if (lastCalled?.called_at) {
-        const elapsed =
-          Date.now() - new Date(lastCalled.called_at).getTime();
-        const remaining = Math.ceil((60000 - elapsed) / 1000);
-
-        if (remaining > 0) {
-          setMessage(
-            `Bu nick için tekrar sıraya girmek üzere ${remaining} saniye beklemelisin.`
-          );
-          return;
-        }
-      }
-
-      const { error } = await supabase.from("queue_players").insert({
+      .insert({
         username: name,
         platform,
         time_control: timeControl,
         status: "waiting",
       });
 
-      if (error) {
-        setMessage("Sıraya katılınamadı: " + error.message);
-        return;
-      }
-
-      const identity: QueueIdentity = {
-        username: name,
-        platform,
-      };
-
-      localStorage.setItem(IDENTITY_KEY, JSON.stringify(identity));
-      setMyQueuePlayer(identity);
-      setUsername("");
-      setMessage("Başarılı! Sıranın sonuna eklendin. ♟");
-      await loadPlayers();
-    } finally {
-      setJoining(false);
-    }
-  }
-
-  async function cancelPlayer(player: Player) {
-    const isMyPlayer =
-      myQueuePlayer !== null &&
-      myQueuePlayer.username.trim().toLowerCase() ===
-        player.username.trim().toLowerCase() &&
-      myQueuePlayer.platform === player.platform;
-
-    if (!isMyPlayer) {
-      setMessage("Yalnızca kendi sıranı iptal edebilirsin.");
-      return;
-    }
-
-    const confirmation = window.prompt(
-      `${player.username} sırasını iptal etmek için nickini yaz:`
-    );
-
-    if (confirmation === null) return;
-
-    if (
-      confirmation.trim().toLowerCase() !==
-      player.username.trim().toLowerCase()
-    ) {
-      setMessage("Nick eşleşmedi. İptal işlemi yapılmadı.");
-      return;
-    }
-
-    const { data: previousCancel, error: checkError } = await supabase
-      .from("queue_players")
-      .select("cancelled_at")
-      .ilike("username", player.username)
-      .not("cancelled_at", "is", null)
-      .order("cancelled_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (checkError) {
-      setMessage("İptal süresi kontrol edilemedi: " + checkError.message);
-      return;
-    }
-
-    if (previousCancel?.cancelled_at) {
-      const elapsed =
-        Date.now() -
-        new Date(previousCancel.cancelled_at).getTime();
-      const remaining = Math.ceil((15000 - elapsed) / 1000);
-
-      if (remaining > 0) {
-        setMessage(
-          `Tekrar iptal etmek için ${remaining} saniye beklemelisin.`
-        );
-        return;
-      }
-    }
-
-    const { data, error } = await supabase
-      .from("queue_players")
-      .update({
-        status: "cancelled",
-        cancelled_at: new Date().toISOString(),
-      })
-      .eq("id", player.id)
-      .eq("status", "waiting")
-      .select("id");
-
     if (error) {
-      setMessage("Sıra iptal edilemedi: " + error.message);
+      setMessage("Sıraya katılınamadı: " + error.message);
       return;
     }
 
-    if (!data || data.length === 0) {
-      setMessage("Bu oyuncu artık bekleme sırasında değil. Sırayı yenile.");
-      await loadPlayers();
-      return;
-    }
-
-    localStorage.removeItem(IDENTITY_KEY);
-    setMyQueuePlayer(null);
-    setMessage(`${player.username} sırası iptal edildi.`);
+    setUsername("");
+    setMessage("Başarılı! Sıranın sonuna eklendin. ♟");
     await loadPlayers();
+  } finally {
+    setJoining(false);
   }
+}
+
+
 
   function finishMatch() {
     setCurrentPlayer(null);
@@ -433,7 +326,9 @@ export default function Home() {
                 id="platform"
                 value={platform}
                 onChange={(event) =>
-                  setPlatform(event.target.value as Platform)
+                  setPlatform(
+                    event.target.value as "Lichess" | "Chess.com"
+                  )
                 }
               >
                 <option value="Lichess">Lichess</option>
@@ -614,57 +509,35 @@ export default function Home() {
             </div>
           ) : (
             <div className="player-list">
-              {players.map((player, index) => {
-                const isMyPlayer =
-                  myQueuePlayer !== null &&
-                  myQueuePlayer.username.trim().toLowerCase() ===
-                    player.username.trim().toLowerCase() &&
-                  myQueuePlayer.platform === player.platform;
-
-                return (
-                  <div className="player-row" key={player.id}>
-                    <div className="player-position">
-                      {String(index + 1).padStart(2, "0")}
-                    </div>
-
-                    <div className="player-avatar">
-                      {player.username.charAt(0).toUpperCase()}
-                    </div>
-
-                    <div className="player-info">
-                      <strong>{player.username}</strong>
-                      <span>{player.platform}</span>
-                    </div>
-
-                    <span className="time-badge">
-                      {player.time_control}
-                    </span>
-
-                    {admin && (
-                      <button
-                        className="remove-button"
-                        onClick={() => void removePlayer(player.id)}
-                        aria-label={`${player.username} oyuncusunu sıradan çıkar`}
-                        title="Oyuncuyu sıradan çıkar"
-                      >
-                        ×
-                      </button>
-                    )}
-
-                    {isMyPlayer && (
-                      <button
-                        type="button"
-                        className="remove-button"
-                        onClick={() => void cancelPlayer(player)}
-                        aria-label="Kendi sıranı iptal et"
-                        title="Kendi sıranı iptal et"
-                      >
-                        İptal et
-                      </button>
-                    )}
+              {players.map((player, index) => (
+                <div className="player-row" key={player.id}>
+                  <div className="player-position">
+                    {String(index + 1).padStart(2, "0")}
                   </div>
-                );
-              })}
+
+                  <div className="player-avatar">
+                    {player.username.charAt(0).toUpperCase()}
+                  </div>
+
+                  <div className="player-info">
+                    <strong>{player.username}</strong>
+                    <span>{player.platform}</span>
+                  </div>
+
+                  <span className="time-badge">{player.time_control}</span>
+
+                  {admin && (
+                    <button
+                      className="remove-button"
+                      onClick={() => void removePlayer(player.id)}
+                      aria-label={`${player.username} oyuncusunu sıradan çıkar`}
+                      title="Oyuncuyu sıradan çıkar"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           )}
 
