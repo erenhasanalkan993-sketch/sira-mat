@@ -1,3 +1,4 @@
+```tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -233,40 +234,55 @@ export default function Home() {
       <div className="ambient ambient-two" />
 
       <header className="topbar">
-<a
-  href="/"
-  style={{
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    gap: "10px",
-    textDecoration: "none",
-    marginRight: "auto",
-    flexShrink: 0,
-  }}
->
-  <img
-    src="/logo.png"
-    alt="SolbekErsin logosu"
-    style={{
-      height: "48px",
-      width: "auto",
-      objectFit: "contain",
-      display: "block",
-    }}
-  />
-  <span
-    style={{
-      fontSize: "17px",
-      fontWeight: 800,
-      letterSpacing: "-0.5px",
-      color: "inherit",
-      whiteSpace: "nowrap",
-    }}
-  >
-    Solbek<span style={{ fontWeight: 500 }}>Ersin</span>
-  </span>
-</a>
+        {/* Logo ve marka adı */}
+        <a
+          href="/"
+          aria-label="SolbekErsin ana sayfa"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            gap: "9px",
+            textDecoration: "none",
+            marginRight: "auto",
+            flexShrink: 0,
+          }}
+        >
+          <img
+            src="/logo.png"
+            alt="SolbekErsin logosu"
+            style={{
+              height: "48px",
+              width: "auto",
+              objectFit: "contain",
+              display: "block",
+              flexShrink: 0,
+            }}
+          />
+
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              fontSize: "17px",
+              fontWeight: 800,
+              letterSpacing: "-0.45px",
+              lineHeight: 1.2,
+              whiteSpace: "nowrap",
+              textShadow: "0 1px 8px rgba(212, 175, 55, 0.12)",
+            }}
+          >
+            <span style={{ color: "#D6B45A" }}>Solbek</span>
+            <span
+              style={{
+                color: "#F4F0E6",
+                fontWeight: 600,
+              }}
+            >
+              Ersin
+            </span>
+          </span>
+        </a>
 
         <button
           className="admin-toggle"
@@ -294,7 +310,8 @@ export default function Home() {
           </h1>
 
           <p className="hero-description">
-            Kullanıcı adını yaz, platformu ve zaman temposunu seç, SolbekErsin'le maç yaparak hünerlerini göster.
+            Kullanıcı adını gir, platformunu ve maç süresini seç.
+            SolbekErsin'e karşı oyna, gücünü göster!
           </p>
 
           <a className="hero-link" href="#queue">
@@ -626,7 +643,7 @@ export default function Home() {
       <footer className="site-footer">
         <a
           className="footer-brand"
-          href="#"
+          href="/"
           aria-label="SolbekErsin ana sayfa"
         >
           ♞ SolbekErsin
@@ -681,3 +698,4 @@ export default function Home() {
     </main>
   );
 }
+```
