@@ -265,9 +265,9 @@ export default function Home() {
           </div>
 
           <h1>
-            Hamleni bekle.
+            SIRANI BEKLE,
             <br />
-            <span>Sıran gelsin.</span>
+            <span>HAMLENİ YAP</span>
           </h1>
 
           <p className="hero-description">
@@ -561,7 +561,7 @@ export default function Home() {
 
         <div className="social-links">
           <a
-            href="https://www.youtube.com/@SolBekErsun"
+            href="https://www.youtube.com/@SolBekersun"
             target="_blank"
             rel="noopener noreferrer"
             aria-label="SolbekErsin YouTube kanalı"
@@ -578,6 +578,26 @@ export default function Home() {
             title="TikTok"
           >
             TikTok ↗
+          </a>
+
+          <a
+            href="https://kick.com/solbekersin"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="SolbekErsin Kick kanalı"
+            title="Kick"
+          >
+            Kick ↗
+          </a>
+
+          <a
+            href="https://www.twitch.tv/solbekersin"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="SolbekErsin Twitch kanalı"
+            title="Twitch"
+          >
+            Twitch ↗
           </a>
         </div>
 
