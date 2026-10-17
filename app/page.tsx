@@ -12,11 +12,18 @@ type TimeControl =
   | "10+0"
   | "15+10";
 
+type Platform = "Lichess" | "Chess.com";
+
 type Player = {
   id: number;
   username: string;
-  platform: "Lichess" | "Chess.com";
+  platform: Platform;
   time_control: TimeControl;
+};
+
+type QueueIdentity = {
+  username: string;
+  platform: Platform;
 };
 
 const timeControls: TimeControl[] = [
@@ -28,15 +35,16 @@ const timeControls: TimeControl[] = [
   "15+10",
 ];
 
+const IDENTITY_KEY = "sira-mat-queue-identity";
+
 export default function Home() {
   const [username, setUsername] = useState("");
-  const [platform, setPlatform] =
-    useState<"Lichess" | "Chess.com">("Lichess");
-  const [timeControl, setTimeControl] =
-    useState<TimeControl>("3+0");
+  const [platform, setPlatform] = useState<Platform>("Lichess");
+  const [timeControl, setTimeControl] = useState<TimeControl>("3+0");
   const [players, setPlayers] = useState<Player[]>([]);
-  const [currentPlayer, setCurrentPlayer] =
-    useState<Player | null>(null);
+  const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
+  const [myQueuePlayer, setMyQueuePlayer] =
+    useState<QueueIdentity | null>(null);
   const [adminMode, setAdminMode] = useState(false);
   const [password, setPassword] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
@@ -63,6 +71,24 @@ export default function Home() {
   }
 
   useEffect(() => {
+    try {
+      const savedIdentity = localStorage.getItem(IDENTITY_KEY);
+
+      if (savedIdentity) {
+        const parsed = JSON.parse(savedIdentity) as QueueIdentity;
+
+        if (
+          typeof parsed.username === "string" &&
+          (parsed.platform === "Lichess" ||
+            parsed.platform === "Chess.com")
+        ) {
+          setMyQueuePlayer(parsed);
+        }
+      }
+    } catch {
+      localStorage.removeItem(IDENTITY_KEY);
+    }
+
     void loadPlayers();
 
     const interval = setInterval(() => {
@@ -149,20 +175,25 @@ export default function Home() {
         }
       }
 
-      const { error } = await supabase
-        .from("queue_players")
-        .insert({
-          username: name,
-          platform,
-          time_control: timeControl,
-          status: "waiting",
-        });
+      const { error } = await supabase.from("queue_players").insert({
+        username: name,
+        platform,
+        time_control: timeControl,
+        status: "waiting",
+      });
 
       if (error) {
         setMessage("Sıraya katılınamadı: " + error.message);
         return;
       }
 
+      const identity: QueueIdentity = {
+        username: name,
+        platform,
+      };
+
+      localStorage.setItem(IDENTITY_KEY, JSON.stringify(identity));
+      setMyQueuePlayer(identity);
       setUsername("");
       setMessage("Başarılı! Sıranın sonuna eklendin. ♟");
       await loadPlayers();
@@ -172,6 +203,17 @@ export default function Home() {
   }
 
   async function cancelPlayer(player: Player) {
+    const isMyPlayer =
+      myQueuePlayer !== null &&
+      myQueuePlayer.username.trim().toLowerCase() ===
+        player.username.trim().toLowerCase() &&
+      myQueuePlayer.platform === player.platform;
+
+    if (!isMyPlayer) {
+      setMessage("Yalnızca kendi sıranı iptal edebilirsin.");
+      return;
+    }
+
     const confirmation = window.prompt(
       `${player.username} sırasını iptal etmek için nickini yaz:`
     );
@@ -204,7 +246,6 @@ export default function Home() {
       const elapsed =
         Date.now() -
         new Date(previousCancel.cancelled_at).getTime();
-
       const remaining = Math.ceil((15000 - elapsed) / 1000);
 
       if (remaining > 0) {
@@ -215,20 +256,29 @@ export default function Home() {
       }
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from("queue_players")
       .update({
         status: "cancelled",
         cancelled_at: new Date().toISOString(),
       })
       .eq("id", player.id)
-      .eq("status", "waiting");
+      .eq("status", "waiting")
+      .select("id");
 
     if (error) {
       setMessage("Sıra iptal edilemedi: " + error.message);
       return;
     }
 
+    if (!data || data.length === 0) {
+      setMessage("Bu oyuncu artık bekleme sırasında değil. Sırayı yenile.");
+      await loadPlayers();
+      return;
+    }
+
+    localStorage.removeItem(IDENTITY_KEY);
+    setMyQueuePlayer(null);
     setMessage(`${player.username} sırası iptal edildi.`);
     await loadPlayers();
   }
@@ -383,9 +433,7 @@ export default function Home() {
                 id="platform"
                 value={platform}
                 onChange={(event) =>
-                  setPlatform(
-                    event.target.value as "Lichess" | "Chess.com"
-                  )
+                  setPlatform(event.target.value as Platform)
                 }
               >
                 <option value="Lichess">Lichess</option>
@@ -566,47 +614,57 @@ export default function Home() {
             </div>
           ) : (
             <div className="player-list">
-              {players.map((player, index) => (
-                <div className="player-row" key={player.id}>
-                  <div className="player-position">
-                    {String(index + 1).padStart(2, "0")}
+              {players.map((player, index) => {
+                const isMyPlayer =
+                  myQueuePlayer !== null &&
+                  myQueuePlayer.username.trim().toLowerCase() ===
+                    player.username.trim().toLowerCase() &&
+                  myQueuePlayer.platform === player.platform;
+
+                return (
+                  <div className="player-row" key={player.id}>
+                    <div className="player-position">
+                      {String(index + 1).padStart(2, "0")}
+                    </div>
+
+                    <div className="player-avatar">
+                      {player.username.charAt(0).toUpperCase()}
+                    </div>
+
+                    <div className="player-info">
+                      <strong>{player.username}</strong>
+                      <span>{player.platform}</span>
+                    </div>
+
+                    <span className="time-badge">
+                      {player.time_control}
+                    </span>
+
+                    {admin && (
+                      <button
+                        className="remove-button"
+                        onClick={() => void removePlayer(player.id)}
+                        aria-label={`${player.username} oyuncusunu sıradan çıkar`}
+                        title="Oyuncuyu sıradan çıkar"
+                      >
+                        ×
+                      </button>
+                    )}
+
+                    {isMyPlayer && (
+                      <button
+                        type="button"
+                        className="remove-button"
+                        onClick={() => void cancelPlayer(player)}
+                        aria-label="Kendi sıranı iptal et"
+                        title="Kendi sıranı iptal et"
+                      >
+                        İptal et
+                      </button>
+                    )}
                   </div>
-
-                  <div className="player-avatar">
-                    {player.username.charAt(0).toUpperCase()}
-                  </div>
-
-                  <div className="player-info">
-                    <strong>{player.username}</strong>
-                    <span>{player.platform}</span>
-                  </div>
-
-                  <span className="time-badge">
-                    {player.time_control}
-                  </span>
-
-                  {admin && (
-                    <button
-                      className="remove-button"
-                      onClick={() => void removePlayer(player.id)}
-                      aria-label={`${player.username} oyuncusunu sıradan çıkar`}
-                      title="Oyuncuyu sıradan çıkar"
-                    >
-                      ×
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    className="remove-button"
-                    onClick={() => void cancelPlayer(player)}
-                    aria-label={`${player.username} sırasını iptal et`}
-                    title="Sırayı iptal et"
-                  >
-                    İptal et
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
