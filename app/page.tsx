@@ -1,15 +1,23 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+import { supabase } from "@/lib/supabase";
 
 type TimeControl = "1+0" | "3+0" | "3+2" | "5+0" | "10+0" | "15+10";
+type Platform = "lichess" | "chess.com";
 
 type Player = {
   id: number;
   name: string;
+  platform: Platform;
   timeControl: TimeControl;
 };
+
+type Cooldowns = Record<string, number>;
+
+const COOLDOWN_MS = 60 * 1000;
+const COOLDOWN_STORAGE_KEY = "solbekersin-user-cooldowns";
 
 const timeControls: { value: TimeControl; label: string }[] = [
   { value: "1+0", label: "1+0" },
@@ -20,50 +28,205 @@ const timeControls: { value: TimeControl; label: string }[] = [
   { value: "15+10", label: "15+10" },
 ];
 
+function getProfileUrl(player: Player): string {
+  const username = encodeURIComponent(player.name);
+
+  return player.platform === "lichess"
+    ? `https://lichess.org/@/${username}`
+    : `https://www.chess.com/member/${username}`;
+}
+
+function getCooldownKey(platform: Platform, name: string): string {
+  return `${platform}:${name.trim().toLocaleLowerCase("tr")}`;
+}
+
+function formatRemainingTime(milliseconds: number): string {
+  return `${Math.ceil(milliseconds / 1000)} saniye`;
+}
+
 export default function Page() {
   const [name, setName] = useState("");
+  const [platform, setPlatform] = useState<Platform>("lichess");
   const [timeControl, setTimeControl] = useState<TimeControl>("3+0");
   const [players, setPlayers] = useState<Player[]>([]);
   const [adminMode, setAdminMode] = useState(false);
+  const [adminModal, setAdminModal] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [notice, setNotice] = useState("");
+  const [cooldowns, setCooldowns] = useState<Cooldowns>({});
+  const [adminLoading, setAdminLoading] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(COOLDOWN_STORAGE_KEY);
+
+      if (stored) {
+        const parsed = JSON.parse(stored) as Cooldowns;
+        const now = Date.now();
+
+        const activeCooldowns = Object.fromEntries(
+          Object.entries(parsed).filter(
+            ([, expiresAt]) =>
+              typeof expiresAt === "number" && expiresAt > now
+          )
+        );
+
+        setCooldowns(activeCooldowns);
+        localStorage.setItem(
+          COOLDOWN_STORAGE_KEY,
+          JSON.stringify(activeCooldowns)
+        );
+      }
+    } catch {
+      setNotice("Bekleme süresi bilgileri okunamadı.");
+    }
+  }, []);
+
+  async function toggleAdmin() {
+    if (adminMode) {
+      await supabase.auth.signOut();
+      setAdminMode(false);
+      setNotice("Yönetici oturumu kapatıldı.");
+      return;
+    }
+
+    setAdminModal(true);
+    setNotice("");
+  }
+
+  async function loginAdmin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!email.trim() || !password) {
+      setNotice("E-posta ve şifreni gir.");
+      return;
+    }
+
+    setAdminLoading(true);
+    setNotice("");
+
+    try {
+      // Önce Supabase e-posta ve şifre doğrulaması yapılır.
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error || !data.user) {
+        setNotice("Giriş başarısız. E-posta veya şifreni kontrol et.");
+        return;
+      }
+
+      // Kullanıcının ID'si queue_admins tablosunda aranır.
+      const { data: admin, error: adminError } = await supabase
+        .from("queue_admins")
+        .select("user_id")
+        .eq("user_id", data.user.id)
+        .maybeSingle();
+
+      if (adminError) {
+        await supabase.auth.signOut();
+        console.error("Yönetici kontrol hatası:", adminError);
+        setNotice(
+          "Yönetici yetkisi kontrol edilemedi. Supabase tablo izinlerini (RLS) kontrol et."
+        );
+        return;
+      }
+
+      if (!admin) {
+        await supabase.auth.signOut();
+        setNotice(
+          "Bu hesap yönetici olarak yetkilendirilmemiş. queue_admins tablosunu kontrol et."
+        );
+        return;
+      }
+
+      setAdminMode(true);
+      setAdminModal(false);
+      setPassword("");
+      setNotice("Yönetici girişi başarılı.");
+    } catch (error) {
+      console.error("Yönetici giriş hatası:", error);
+      setNotice("Giriş sırasında bir hata oluştu. Tekrar dene.");
+    } finally {
+      setAdminLoading(false);
+    }
+  }
 
   function joinQueue() {
     const cleanName = name.trim();
 
     if (!cleanName) {
-      setNotice("Lütfen ismini gir.");
+      setNotice("Lütfen satranç kullanıcı adını gir.");
+      return;
+    }
+
+    if (/\s/.test(cleanName)) {
+      setNotice("Kullanıcı adında boşluk kullanma.");
       return;
     }
 
     const alreadyJoined = players.some(
       (player) =>
+        player.platform === platform &&
         player.name.toLocaleLowerCase("tr") ===
-        cleanName.toLocaleLowerCase("tr")
+          cleanName.toLocaleLowerCase("tr")
     );
 
     if (alreadyJoined) {
-      setNotice("Bu isim zaten sırada.");
+      setNotice("Bu kullanıcı adı seçilen platformda zaten sırada.");
       return;
     }
 
-    setPlayers((current) => [
-      ...current,
-      {
-        id: Date.now(),
-        name: cleanName,
-        timeControl,
-      },
-    ]);
+    const cooldownKey = getCooldownKey(platform, cleanName);
+    const remaining = (cooldowns[cooldownKey] ?? 0) - Date.now();
+
+    if (remaining > 0) {
+      setNotice(
+        `Tekrar sıraya katılmak için ${formatRemainingTime(remaining)} beklemelisin.`
+      );
+      return;
+    }
+
+    const newPlayer: Player = {
+      id: Date.now(),
+      name: cleanName,
+      platform,
+      timeControl,
+    };
+
+    const nextCooldowns: Cooldowns = {
+      ...cooldowns,
+      [cooldownKey]: Date.now() + COOLDOWN_MS,
+    };
+
+    setPlayers((current) => [...current, newPlayer]);
+    setCooldowns(nextCooldowns);
+
+    try {
+      localStorage.setItem(
+        COOLDOWN_STORAGE_KEY,
+        JSON.stringify(nextCooldowns)
+      );
+    } catch {
+      // Depolama kullanılamazsa bekleme süresi bu oturumda uygulanır.
+    }
 
     setName("");
-    setNotice(`${cleanName}, ${timeControl} süresiyle sıraya katıldı.`);
+    setNotice(
+      `${cleanName}, ${platform === "lichess" ? "Lichess" : "Chess.com"} üzerinden ${timeControl} süresiyle sıraya katıldı. Aynı kullanıcı adıyla tekrar katılmak için 1 dakika beklemelisin.`
+    );
   }
 
   function removePlayer(id: number) {
+    if (!adminMode) return;
     setPlayers((current) => current.filter((player) => player.id !== id));
   }
 
   function movePlayer(id: number, direction: -1 | 1) {
+    if (!adminMode) return;
+
     setPlayers((current) => {
       const index = current.findIndex((player) => player.id === id);
       const nextIndex = index + direction;
@@ -73,7 +236,6 @@ export default function Page() {
       }
 
       const updated = [...current];
-
       [updated[index], updated[nextIndex]] = [
         updated[nextIndex],
         updated[index],
@@ -81,26 +243,6 @@ export default function Page() {
 
       return updated;
     });
-  }
-
-  function toggleAdmin() {
-    if (adminMode) {
-      setAdminMode(false);
-      setNotice("Yönetici modu kapatıldı.");
-      return;
-    }
-
-    const password = window.prompt("Yönetici şifresini gir:");
-
-    if (password === null) return;
-
-    if (password !== "admin123") {
-      setNotice("Şifre hatalı.");
-      return;
-    }
-
-    setAdminMode(true);
-    setNotice("Yönetici modu açıldı.");
   }
 
   return (
@@ -129,9 +271,88 @@ export default function Page() {
           className="admin-toggle"
           onClick={toggleAdmin}
         >
-          {adminMode ? "Yönetici modunu kapat" : "Yönetici"}
+          {adminMode ? "Yönetici oturumunu kapat" : "Yönetici"}
         </button>
       </header>
+
+      {adminModal && (
+        <div
+          role="presentation"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setAdminModal(false);
+              setNotice("");
+            }
+          }}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            display: "grid",
+            placeItems: "center",
+            padding: 20,
+            background: "rgba(0,0,0,0.72)",
+          }}
+        >
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-login-title"
+            className="panel"
+            style={{ width: "100%", maxWidth: 420, padding: 28 }}
+          >
+            <p className="section-label">YETKİLİ ERİŞİMİ</p>
+            <h2 id="admin-login-title">Yönetici girişi</h2>
+            <p className="panel-description">
+              Supabase hesabının e-posta adresini ve şifresini gir.
+            </p>
+
+            <form className="join-form" onSubmit={loginAdmin}>
+              <label htmlFor="admin-email">E-posta</label>
+              <input
+                id="admin-email"
+                type="email"
+                autoComplete="username"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="E-posta adresin"
+              />
+
+              <label htmlFor="admin-password">Şifre</label>
+              <input
+                id="admin-password"
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="Şifren"
+              />
+
+              <button
+                type="submit"
+                className="primary-button"
+                disabled={adminLoading}
+              >
+                {adminLoading ? "Kontrol ediliyor..." : "Giriş yap"}
+              </button>
+
+              <button
+                type="button"
+                className="admin-toggle"
+                onClick={() => {
+                  setAdminModal(false);
+                  setPassword("");
+                  setNotice("");
+                }}
+              >
+                Vazgeç
+              </button>
+            </form>
+          </section>
+        </div>
+      )}
 
       <section className="hero">
         <div className="hero-copy">
@@ -147,7 +368,8 @@ export default function Page() {
           </h1>
 
           <p className="hero-description">
-            Satranç oyun sırasına katıl, oyun süreni seç ve sıranı takip et.
+            Satranç platformunu seç, kullanıcı adını ekle ve oyun süreni
+            belirleyerek sıranı takip et.
           </p>
         </div>
       </section>
@@ -159,7 +381,6 @@ export default function Page() {
               <p className="section-label">CANLI LİSTE</p>
               <h2>Oyun sırası</h2>
             </div>
-
             <span className="queue-count">{players.length} kişi</span>
           </div>
 
@@ -177,8 +398,27 @@ export default function Page() {
                   </span>
 
                   <div className="player-details">
-                    <span className="player-name">{player.name}</span>
-                    <span className="player-time">{player.timeControl}</span>
+                    <a
+                      className="player-name player-profile-link"
+                      href={getProfileUrl(player)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title={`${player.name} adlı oyuncunun profilini aç`}
+                    >
+                      <span>{player.name}</span>
+                      <span className="profile-link-icon" aria-hidden="true">
+                        ↗
+                      </span>
+                    </a>
+
+                    <div className="player-meta">
+                      <span className="player-platform">
+                        {player.platform === "lichess"
+                          ? "Lichess"
+                          : "Chess.com"}
+                      </span>
+                      <span className="player-time">{player.timeControl}</span>
+                    </div>
                   </div>
 
                   {adminMode && (
@@ -192,7 +432,6 @@ export default function Page() {
                       >
                         ↑
                       </button>
-
                       <button
                         type="button"
                         className="remove-button"
@@ -202,7 +441,6 @@ export default function Page() {
                       >
                         ↓
                       </button>
-
                       <button
                         type="button"
                         className="remove-button"
@@ -219,16 +457,15 @@ export default function Page() {
           )}
 
           <div className="queue-footer">
-            Sıra, katılım sırasına göre düzenlenir.
+            Oyuncunun ismine tıklayarak satranç profilini yeni sekmede açabilirsin.
           </div>
         </div>
 
         <div className="panel join-panel">
           <p className="section-label">HAZIR MISIN?</p>
           <h2>Sıraya katıl</h2>
-
           <p className="panel-description">
-            İsmini yaz, oyun süreni seç ve sıradaki yerini al.
+            Platformunu seç, kullanıcı adını ve oyun süreni gir.
           </p>
 
           <form
@@ -238,22 +475,33 @@ export default function Page() {
               joinQueue();
             }}
           >
-            <label htmlFor="player-name">Adın</label>
+            <label htmlFor="platform">Satranç platformu</label>
+            <select
+              id="platform"
+              className="time-control-select"
+              value={platform}
+              onChange={(event) =>
+                setPlatform(event.target.value as Platform)
+              }
+            >
+              <option value="lichess">Lichess</option>
+              <option value="chess.com">Chess.com</option>
+            </select>
 
+            <label htmlFor="player-name">Kullanıcı adın</label>
             <input
               id="player-name"
               type="text"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="İsmini yaz..."
+              placeholder="Satranç kullanıcı adın..."
               maxLength={40}
-              autoComplete="name"
+              autoComplete="off"
             />
 
             <label htmlFor="time-control" className="time-control-label">
               Blitz oyun süresi
             </label>
-
             <select
               id="time-control"
               className="time-control-select"
