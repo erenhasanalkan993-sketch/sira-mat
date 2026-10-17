@@ -1,545 +1,715 @@
 
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-type TimeControl = "1+0" | "3+0" | "3+2" | "5+0" | "10+0" | "15+10";
-type Platform = "lichess" | "chess.com";
+type TimeControl =
+  | "1+0"
+  | "3+0"
+  | "3+2"
+  | "5+0"
+  | "10+0"
+  | "15+10";
 
 type Player = {
   id: number;
-  name: string;
-  platform: Platform;
-  timeControl: TimeControl;
+  username: string;
+  platform: "Lichess" | "Chess.com";
+  time_control: TimeControl;
 };
 
-type Cooldowns = Record<string, number>;
+type ExistingPlayer = {
+  id: number;
+  status: string;
+  called_at: string | null;
+  created_at: string;
+};
 
-const COOLDOWN_MS = 60 * 1000;
-const COOLDOWN_STORAGE_KEY = "solbekersin-user-cooldowns";
-
-const timeControls: { value: TimeControl; label: string }[] = [
-  { value: "1+0", label: "1+0" },
-  { value: "3+0", label: "3+0 · Popüler" },
-  { value: "3+2", label: "3+2" },
-  { value: "5+0", label: "5+0" },
-  { value: "10+0", label: "10+0" },
-  { value: "15+10", label: "15+10" },
+const timeControls: TimeControl[] = [
+  "1+0",
+  "3+0",
+  "3+2",
+  "5+0",
+  "10+0",
+  "15+10",
 ];
 
-function getProfileUrl(player: Player): string {
-  const username = encodeURIComponent(player.name);
+export default function Home() {
+  const [username, setUsername] = useState("");
+  const [platform, setPlatform] =
+    useState<"Lichess" | "Chess.com">("Lichess");
+  const [timeControl, setTimeControl] =
+    useState<TimeControl>("3+0");
 
-  return player.platform === "lichess"
-    ? `https://lichess.org/@/${username}`
-    : `https://www.chess.com/member/${username}`;
-}
-
-function getCooldownKey(platform: Platform, name: string): string {
-  return `${platform}:${name.trim().toLocaleLowerCase("tr")}`;
-}
-
-function formatRemainingTime(milliseconds: number): string {
-  return `${Math.ceil(milliseconds / 1000)} saniye`;
-}
-
-export default function Page() {
-  const [name, setName] = useState("");
-  const [platform, setPlatform] = useState<Platform>("lichess");
-  const [timeControl, setTimeControl] = useState<TimeControl>("3+0");
   const [players, setPlayers] = useState<Player[]>([]);
+  const [currentPlayer, setCurrentPlayer] =
+    useState<Player | null>(null);
+
   const [adminMode, setAdminMode] = useState(false);
-  const [adminModal, setAdminModal] = useState(false);
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [notice, setNotice] = useState("");
-  const [cooldowns, setCooldowns] = useState<Cooldowns>({});
-  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminEmail, setAdminEmail] = useState("");
+  const [admin, setAdmin] = useState(false);
+
+  const [joining, setJoining] = useState(false);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  async function loadPlayers() {
+    const { data, error } = await supabase
+      .from("queue_players")
+      .select("id, username, platform, time_control")
+      .eq("status", "waiting")
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("Sıra yüklenemedi:", error.message);
+      setLoading(false);
+      return;
+    }
+
+    setPlayers((data ?? []) as Player[]);
+    setLoading(false);
+  }
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(COOLDOWN_STORAGE_KEY);
+    void loadPlayers();
 
-      if (stored) {
-        const parsed = JSON.parse(stored) as Cooldowns;
-        const now = Date.now();
+    const interval = setInterval(() => {
+      void loadPlayers();
+    }, 5000);
 
-        const activeCooldowns = Object.fromEntries(
-          Object.entries(parsed).filter(
-            ([, expiresAt]) =>
-              typeof expiresAt === "number" && expiresAt > now
-          )
-        );
-
-        setCooldowns(activeCooldowns);
-        localStorage.setItem(
-          COOLDOWN_STORAGE_KEY,
-          JSON.stringify(activeCooldowns)
-        );
-      }
-    } catch {
-      setNotice("Bekleme süresi bilgileri okunamadı.");
-    }
+    return () => clearInterval(interval);
   }, []);
 
-  async function toggleAdmin() {
-    if (adminMode) {
-      await supabase.auth.signOut();
-      setAdminMode(false);
-      setNotice("Yönetici oturumu kapatıldı.");
+  async function callNextPlayer() {
+    if (players.length === 0) {
+      setMessage("Sırada bekleyen oyuncu yok.");
       return;
     }
 
-    setAdminModal(true);
-    setNotice("");
+    const nextPlayer = players[0];
+
+    const { error } = await supabase
+      .from("queue_players")
+      .update({
+        status: "called",
+        called_at: new Date().toISOString(),
+      })
+      .eq("id", nextPlayer.id)
+      .eq("status", "waiting");
+
+    if (error) {
+      setMessage("Oyuncu çağrılamadı: " + error.message);
+      return;
+    }
+
+    setCurrentPlayer(nextPlayer);
+    setPlayers((old) =>
+      old.filter((player) => player.id !== nextPlayer.id)
+    );
+    setMessage("");
   }
 
-  async function loginAdmin(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function joinQueue() {
+    if (joining) return;
 
-    if (!email.trim() || !password) {
-      setNotice("E-posta ve şifreni gir.");
+    const name = username.trim();
+
+    if (!name) {
+      setMessage("Lütfen kullanıcı adını yaz.");
       return;
     }
 
-    setAdminLoading(true);
-    setNotice("");
+    setJoining(true);
+    setMessage("");
 
     try {
-      // Önce Supabase e-posta ve şifre doğrulaması yapılır.
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
+      const { data, error: checkError } = await supabase
+        .from("queue_players")
+        .select("id, status, called_at, created_at")
+        .ilike("username", name)
+        .in("status", ["waiting", "called"])
+        .order("created_at", { ascending: false });
 
-      if (error || !data.user) {
-        setNotice("Giriş başarısız. E-posta veya şifreni kontrol et.");
+      if (checkError) {
+        setMessage("Sıra kontrol edilemedi: " + checkError.message);
         return;
       }
 
-      // Kullanıcının ID'si queue_admins tablosunda aranır.
-      const { data: admin, error: adminError } = await supabase
-        .from("queue_admins")
-        .select("user_id")
-        .eq("user_id", data.user.id)
-        .maybeSingle();
+      const existing = (data ?? []) as ExistingPlayer[];
 
-      if (adminError) {
-        await supabase.auth.signOut();
-        console.error("Yönetici kontrol hatası:", adminError);
-        setNotice(
-          "Yönetici yetkisi kontrol edilemedi. Supabase tablo izinlerini (RLS) kontrol et."
-        );
+      const alreadyWaiting = existing.some(
+        (player) => player.status === "waiting"
+      );
+
+      if (alreadyWaiting) {
+        setMessage("Bu nick zaten sırada.");
         return;
       }
 
-      if (!admin) {
-        await supabase.auth.signOut();
-        setNotice(
-          "Bu hesap yönetici olarak yetkilendirilmemiş. queue_admins tablosunu kontrol et."
-        );
+      const lastCalled = existing.find(
+        (player) =>
+          player.status === "called" && Boolean(player.called_at)
+      );
+
+      if (lastCalled?.called_at) {
+        const elapsed =
+          Date.now() - new Date(lastCalled.called_at).getTime();
+
+        const remaining = Math.ceil((60000 - elapsed) / 1000);
+
+        if (remaining > 0) {
+          setMessage(
+            "Bu nick için tekrar sıraya girmek üzere " +
+              remaining +
+              " saniye beklemelisin."
+          );
+          return;
+        }
+      }
+
+      const { error } = await supabase
+        .from("queue_players")
+        .insert({
+          username: name,
+          platform,
+          time_control: timeControl,
+          status: "waiting",
+        });
+
+      if (error) {
+        setMessage("Sıraya katılınamadı: " + error.message);
         return;
       }
 
-      setAdminMode(true);
-      setAdminModal(false);
-      setPassword("");
-      setNotice("Yönetici girişi başarılı.");
+      setUsername("");
+      setMessage("Başarılı! Sıranın sonuna eklendin. ♟");
+      await loadPlayers();
     } catch (error) {
-      console.error("Yönetici giriş hatası:", error);
-      setNotice("Giriş sırasında bir hata oluştu. Tekrar dene.");
+      console.error("Sıraya katılma hatası:", error);
+      setMessage("Beklenmeyen bir hata oluştu. Lütfen tekrar dene.");
     } finally {
-      setAdminLoading(false);
+      setJoining(false);
     }
   }
 
-  function joinQueue() {
-    const cleanName = name.trim();
-
-    if (!cleanName) {
-      setNotice("Lütfen satranç kullanıcı adını gir.");
-      return;
-    }
-
-    if (/\s/.test(cleanName)) {
-      setNotice("Kullanıcı adında boşluk kullanma.");
-      return;
-    }
-
-    const alreadyJoined = players.some(
-      (player) =>
-        player.platform === platform &&
-        player.name.toLocaleLowerCase("tr") ===
-          cleanName.toLocaleLowerCase("tr")
-    );
-
-    if (alreadyJoined) {
-      setNotice("Bu kullanıcı adı seçilen platformda zaten sırada.");
-      return;
-    }
-
-    const cooldownKey = getCooldownKey(platform, cleanName);
-    const remaining = (cooldowns[cooldownKey] ?? 0) - Date.now();
-
-    if (remaining > 0) {
-      setNotice(
-        `Tekrar sıraya katılmak için ${formatRemainingTime(remaining)} beklemelisin.`
-      );
-      return;
-    }
-
-    const newPlayer: Player = {
-      id: Date.now(),
-      name: cleanName,
-      platform,
-      timeControl,
-    };
-
-    const nextCooldowns: Cooldowns = {
-      ...cooldowns,
-      [cooldownKey]: Date.now() + COOLDOWN_MS,
-    };
-
-    setPlayers((current) => [...current, newPlayer]);
-    setCooldowns(nextCooldowns);
-
-    try {
-      localStorage.setItem(
-        COOLDOWN_STORAGE_KEY,
-        JSON.stringify(nextCooldowns)
-      );
-    } catch {
-      // Depolama kullanılamazsa bekleme süresi bu oturumda uygulanır.
-    }
-
-    setName("");
-    setNotice(
-      `${cleanName}, ${platform === "lichess" ? "Lichess" : "Chess.com"} üzerinden ${timeControl} süresiyle sıraya katıldı. Aynı kullanıcı adıyla tekrar katılmak için 1 dakika beklemelisin.`
-    );
+  function finishMatch() {
+    setCurrentPlayer(null);
+    setMessage("Karşılaşma tamamlandı.");
   }
 
-  function removePlayer(id: number) {
-    if (!adminMode) return;
-    setPlayers((current) => current.filter((player) => player.id !== id));
+  async function removePlayer(id: number) {
+    const { error } = await supabase
+      .from("queue_players")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      setMessage("Oyuncu silinemedi: " + error.message);
+      return;
+    }
+
+    setMessage("Oyuncu sıradan çıkarıldı.");
+    await loadPlayers();
   }
 
-  function movePlayer(id: number, direction: -1 | 1) {
-    if (!adminMode) return;
-
-    setPlayers((current) => {
-      const index = current.findIndex((player) => player.id === id);
-      const nextIndex = index + direction;
-
-      if (index === -1 || nextIndex < 0 || nextIndex >= current.length) {
-        return current;
-      }
-
-      const updated = [...current];
-      [updated[index], updated[nextIndex]] = [
-        updated[nextIndex],
-        updated[index],
-      ];
-
-      return updated;
+  async function loginAdmin() {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: adminEmail.trim(),
+      password,
     });
+
+    if (error || !data.user) {
+      setMessage("E-posta veya şifre hatalı.");
+      return;
+    }
+
+    const { data: adminRecord, error: adminError } = await supabase
+      .from("queue_admins")
+      .select("user_id")
+      .eq("user_id", data.user.id)
+      .maybeSingle();
+
+    if (adminError || !adminRecord) {
+      await supabase.auth.signOut();
+      setMessage("Bu hesabın yönetici yetkisi yok.");
+      return;
+    }
+
+    setAdmin(true);
+    setPassword("");
+    setMessage("Yönetici girişi başarılı.");
+  }
+
+  async function logoutAdmin() {
+    await supabase.auth.signOut();
+    setAdmin(false);
+    setAdminMode(false);
+    setCurrentPlayer(null);
+    setMessage("");
   }
 
   return (
     <main className="site-shell">
-      <div className="ambient" aria-hidden="true" />
+      <div className="ambient ambient-one" />
+      <div className="ambient ambient-two" />
 
       <header className="topbar">
-        <a href="/" className="brand" aria-label="SolbekErsin ana sayfa">
+        <a
+          href="/"
+          aria-label="SolbekErsin ana sayfa"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "flex-start",
+            gap: "9px",
+            textDecoration: "none",
+            marginRight: "auto",
+            flexShrink: 0,
+          }}
+        >
           <img
             src="/logo.png"
-            alt="SolbekErsin"
-            width={36}
-            height={36}
+            alt="SolbekErsin logosu"
             style={{
-              width: 36,
-              height: 36,
+              height: "48px",
+              width: "auto",
               objectFit: "contain",
-              borderRadius: 8,
+              display: "block",
+              flexShrink: 0,
             }}
           />
-          <span>SolbekErsin</span>
+
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              fontSize: "17px",
+              fontWeight: 800,
+              letterSpacing: "-0.45px",
+              lineHeight: 1.2,
+              whiteSpace: "nowrap",
+              textShadow: "0 1px 8px rgba(212, 175, 55, 0.12)",
+            }}
+          >
+            <span style={{ color: "#D6B45A" }}>Solbek</span>
+            <span
+              style={{
+                color: "#F4F0E6",
+                fontWeight: 600,
+              }}
+            >
+              Ersin
+            </span>
+          </span>
         </a>
 
         <button
-          type="button"
           className="admin-toggle"
-          onClick={toggleAdmin}
+          onClick={() => {
+            setAdminMode((old) => !old);
+            setMessage("");
+          }}
         >
-          {adminMode ? "Yönetici oturumunu kapat" : "Yönetici"}
+          <span>{adminMode ? "♟" : "⚙"}</span>
+          {adminMode ? "Oyuncu ekranı" : "Yönetici"}
         </button>
       </header>
 
-      {adminModal && (
-        <div
-          role="presentation"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              setAdminModal(false);
-              setNotice("");
-            }
-          }}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 1000,
-            display: "grid",
-            placeItems: "center",
-            padding: 20,
-            background: "rgba(0,0,0,0.72)",
-          }}
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="admin-login-title"
-            className="panel"
-            style={{ width: "100%", maxWidth: 420, padding: 28 }}
-          >
-            <p className="section-label">YETKİLİ ERİŞİMİ</p>
-            <h2 id="admin-login-title">Yönetici girişi</h2>
-            <p className="panel-description">
-              Supabase hesabının e-posta adresini ve şifresini gir.
-            </p>
-
-            <form className="join-form" onSubmit={loginAdmin}>
-              <label htmlFor="admin-email">E-posta</label>
-              <input
-                id="admin-email"
-                type="email"
-                autoComplete="username"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="E-posta adresin"
-              />
-
-              <label htmlFor="admin-password">Şifre</label>
-              <input
-                id="admin-password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Şifren"
-              />
-
-              <button
-                type="submit"
-                className="primary-button"
-                disabled={adminLoading}
-              >
-                {adminLoading ? "Kontrol ediliyor..." : "Giriş yap"}
-              </button>
-
-              <button
-                type="button"
-                className="admin-toggle"
-                onClick={() => {
-                  setAdminModal(false);
-                  setPassword("");
-                  setNotice("");
-                }}
-              >
-                Vazgeç
-              </button>
-            </form>
-          </section>
-        </div>
-      )}
-
       <section className="hero">
         <div className="hero-copy">
-          <p className="eyebrow">
+          <div className="eyebrow">
             <span className="live-dot" />
-            SATRANÇ TOPLULUĞU
-          </p>
+            CANLI SATRANÇ SIRASI
+          </div>
 
           <h1>
-            Sıranı al,
+            Sıranı Bekle,
             <br />
-            <span>oyuna katıl.</span>
+            <span>Hamleni Yap</span>
           </h1>
 
           <p className="hero-description">
-            Satranç platformunu seç, kullanıcı adını ekle ve oyun süreni
-            belirleyerek sıranı takip et.
+            Kullanıcı adını gir, platformunu ve maç süresini seç.
+            SolbekErsin'e karşı oyna, gücünü göster!
           </p>
+
+          
+        </div>
+
+        <div className="hero-art" aria-label="Satranç taşları">
+          <div className="orbit orbit-one" />
+          <div className="orbit orbit-two" />
+          <div className="hero-glow" />
+
+          <span className="hero-knight" aria-hidden="true">
+            ♞
+          </span>
+
+          <span
+            className="hero-extra-piece hero-king"
+            style={{ top: "15%", right: "12%" }}
+            aria-hidden="true"
+          >
+            ♚
+          </span>
+
+          <span
+            className="hero-extra-piece hero-queen"
+            style={{ bottom: "20%", left: "10%" }}
+            aria-hidden="true"
+          >
+            ♛
+          </span>
+
+          <span
+            className="hero-extra-piece hero-bishop"
+            style={{ top: "18%", left: "12%" }}
+            aria-hidden="true"
+          >
+            ♝
+          </span>
+
+          <span
+            className="hero-extra-piece"
+            style={{
+              bottom: "17%",
+              right: "14%",
+              fontSize: "clamp(32px, 4vw, 48px)",
+            }}
+            aria-hidden="true"
+          >
+            ♟
+          </span>
+
+          <div className="hero-art-label">
+            <span className="live-dot" />
+            Her oyun yeni bir macera, satrancın sonsuz olasılıklarını
+            birlikte yaşayalım.
+          </div>
         </div>
       </section>
 
       <section className="main-grid">
-        <div className="panel queue-panel">
+        <section className="panel join-panel">
           <div className="panel-heading">
+            <div className="section-icon">♟</div>
             <div>
-              <p className="section-label">CANLI LİSTE</p>
-              <h2>Oyun sırası</h2>
+              <div className="eyebrow">OYUNCU ALANI</div>
+              <h2>{adminMode ? "Yönetici paneli" : "Sıraya katıl"}</h2>
             </div>
-            <span className="queue-count">{players.length} kişi</span>
           </div>
 
-          {players.length === 0 ? (
-            <div className="empty-state">
-              <p>Henüz sırada kimse yok.</p>
-              <span>İlk katılan sen ol!</span>
+          {!adminMode ? (
+            <div className="form-content">
+              <p className="muted">
+                Bilgilerini gir, oyun tarzını seç ve yerini al.
+              </p>
+
+              <label htmlFor="username">Satranç kullanıcı adın</label>
+              <input
+                id="username"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                placeholder="Örn. satrancoyuncusu"
+                maxLength={50}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") void joinQueue();
+                }}
+              />
+
+              <label htmlFor="platform">Oynadığın platform</label>
+              <select
+                id="platform"
+                value={platform}
+                onChange={(event) =>
+                  setPlatform(
+                    event.target.value as "Lichess" | "Chess.com"
+                  )
+                }
+              >
+                <option value="Lichess">Lichess</option>
+                <option value="Chess.com">Chess.com</option>
+              </select>
+
+              <label htmlFor="timeControl">Oyun süresi</label>
+              <select
+                id="timeControl"
+                value={timeControl}
+                onChange={(event) =>
+                  setTimeControl(event.target.value as TimeControl)
+                }
+              >
+                {timeControls.map((control) => (
+                  <option key={control} value={control}>
+                    {control}
+                    {control === "3+0" ? " · Popüler" : ""}
+                  </option>
+                ))}
+              </select>
+
+              <button
+                className="primary-button"
+                onClick={() => void joinQueue()}
+                disabled={joining}
+              >
+                {joining ? "Sıraya ekleniyor..." : "Sıraya gir"}
+                <span>↗</span>
+              </button>
+
+              {message && (
+                <div className="feedback" role="status">
+                  {message}
+                </div>
+              )}
+
+              <div className="notice">
+                <span>✳</span>
+                Sıra otomatik olarak 5 saniyede bir yenilenir.
+              </div>
             </div>
           ) : (
-            <ol className="player-list">
-              {players.map((player, index) => (
-                <li className="player-item" key={player.id}>
-                  <span className="player-position">
-                    {String(index + 1).padStart(2, "0")}
-                  </span>
+            <div className="form-content">
+              {!admin ? (
+                <>
+                  <p className="muted">
+                    Yönetici hesabınla giriş yap.
+                  </p>
 
-                  <div className="player-details">
-                    <a
-                      className="player-name player-profile-link"
-                      href={getProfileUrl(player)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      title={`${player.name} adlı oyuncunun profilini aç`}
-                    >
-                      <span>{player.name}</span>
-                      <span className="profile-link-icon" aria-hidden="true">
-                        ↗
-                      </span>
-                    </a>
+                  <label htmlFor="adminEmail">E-posta adresi</label>
+                  <input
+                    id="adminEmail"
+                    type="email"
+                    autoComplete="username"
+                    value={adminEmail}
+                    onChange={(event) => setAdminEmail(event.target.value)}
+                    placeholder="Yönetici e-postası"
+                  />
 
-                    <div className="player-meta">
-                      <span className="player-platform">
-                        {player.platform === "lichess"
-                          ? "Lichess"
-                          : "Chess.com"}
-                      </span>
-                      <span className="player-time">{player.timeControl}</span>
-                    </div>
+                  <label htmlFor="password">Şifre</label>
+                  <input
+                    id="password"
+                    type="password"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Yönetici şifresi"
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") void loginAdmin();
+                    }}
+                  />
+
+                  <button
+                    className="primary-button"
+                    onClick={() => void loginAdmin()}
+                  >
+                    Giriş yap <span>↗</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="admin-status">
+                    <span className="live-dot" />
+                    Yönetici oturumu açık
                   </div>
 
-                  {adminMode && (
-                    <div className="player-actions">
-                      <button
-                        type="button"
-                        className="remove-button"
-                        onClick={() => movePlayer(player.id, -1)}
-                        disabled={index === 0}
-                        aria-label="Sırada yukarı taşı"
+                  <p className="muted">
+                    Bekleyen oyuncuları yönetebilir ve sıradaki oyuncuyu
+                    çağırabilirsin.
+                  </p>
+
+                  <button
+                    className="primary-button"
+                    onClick={() => void callNextPlayer()}
+                  >
+                    Sıradaki oyuncuyu çağır <span>→</span>
+                  </button>
+
+                  {currentPlayer && (
+                    <div className="current-player">
+                      <div className="eyebrow">ÇAĞRILAN OYUNCU</div>
+                      <h3>{currentPlayer.username}</h3>
+                      <p>
+                        {currentPlayer.platform} ·{" "}
+                        {currentPlayer.time_control}
+                      </p>
+
+                      <a
+                        className="profile-link"
+                        href={
+                          currentPlayer.platform === "Lichess"
+                            ? "https://lichess.org/@/" +
+                              encodeURIComponent(currentPlayer.username)
+                            : "https://www.chess.com/member/" +
+                              encodeURIComponent(currentPlayer.username)
+                        }
+                        target="_blank"
+                        rel="noreferrer"
                       >
-                        ↑
-                      </button>
+                        Profili aç ↗
+                      </a>
+
                       <button
-                        type="button"
-                        className="remove-button"
-                        onClick={() => movePlayer(player.id, 1)}
-                        disabled={index === players.length - 1}
-                        aria-label="Sırada aşağı taşı"
+                        className="secondary-button"
+                        onClick={finishMatch}
                       >
-                        ↓
-                      </button>
-                      <button
-                        type="button"
-                        className="remove-button"
-                        onClick={() => removePlayer(player.id)}
-                        aria-label="Sıradan çıkar"
-                      >
-                        ×
+                        Oyunu tamamlandı işaretle
                       </button>
                     </div>
                   )}
-                </li>
+
+                  <button
+                    className="secondary-button"
+                    onClick={() => void logoutAdmin()}
+                  >
+                    Oturumu kapat
+                  </button>
+                </>
+              )}
+
+              {message && (
+                <div className="feedback" role="status">
+                  {message}
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+
+        <section className="panel queue-panel" id="queue">
+          <div className="queue-heading">
+            <div>
+              <div className="eyebrow">SIRADAKİ RAKİPLER</div>
+              <h2>Oyuncu sırası</h2>
+            </div>
+
+            <div className="queue-count">
+              <strong>{players.length}</strong>
+              <span>oyuncu</span>
+            </div>
+          </div>
+
+          <div className="queue-status">
+            <span className="live-dot" />
+            CANLI GÜNCELLENİYOR
+          </div>
+
+          {loading ? (
+            <div className="empty-state">
+              <span className="loading-spinner" />
+              <strong>Sıra yükleniyor...</strong>
+            </div>
+          ) : players.length === 0 ? (
+            <div className="empty-state">
+              <div className="empty-chess">♙</div>
+              <strong>
+                Rakibini bul, oyun süreni seç ve satranç mücadelesine katıl.
+                Tahta seni bekliyor.
+              </strong>
+              <p>İlk hamleyi sen yap!</p>
+            </div>
+          ) : (
+            <div className="player-list">
+              {players.map((player, index) => (
+                <div className="player-row" key={player.id}>
+                  <div className="player-position">
+                    {String(index + 1).padStart(2, "0")}
+                  </div>
+
+                  <div className="player-avatar">
+                    {player.username.charAt(0).toUpperCase()}
+                  </div>
+
+                  <div className="player-info">
+                    <strong>{player.username}</strong>
+                    <span>{player.platform}</span>
+                  </div>
+
+                  <span className="time-badge">
+                    {player.time_control}
+                  </span>
+
+                  {admin && (
+                    <button
+                      className="remove-button"
+                      onClick={() => void removePlayer(player.id)}
+                      aria-label={
+                        player.username +
+                        " oyuncusunu sıradan çıkar"
+                      }
+                      title="Oyuncuyu sıradan çıkar"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
               ))}
-            </ol>
+            </div>
           )}
 
           <div className="queue-footer">
-            Oyuncunun ismine tıklayarak satranç profilini yeni sekmede açabilirsin.
+            <span>♟</span>
+            <p>Her oyun yeni bir hikâye.</p>
+            <span className="footer-spark">✳</span>
           </div>
-        </div>
-
-        <div className="panel join-panel">
-          <p className="section-label">HAZIR MISIN?</p>
-          <h2>Sıraya katıl</h2>
-          <p className="panel-description">
-            Platformunu seç, kullanıcı adını ve oyun süreni gir.
-          </p>
-
-          <form
-            className="join-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              joinQueue();
-            }}
-          >
-            <label htmlFor="platform">Satranç platformu</label>
-            <select
-              id="platform"
-              className="time-control-select"
-              value={platform}
-              onChange={(event) =>
-                setPlatform(event.target.value as Platform)
-              }
-            >
-              <option value="lichess">Lichess</option>
-              <option value="chess.com">Chess.com</option>
-            </select>
-
-            <label htmlFor="player-name">Kullanıcı adın</label>
-            <input
-              id="player-name"
-              type="text"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Satranç kullanıcı adın..."
-              maxLength={40}
-              autoComplete="off"
-            />
-
-            <label htmlFor="time-control" className="time-control-label">
-              Blitz oyun süresi
-            </label>
-            <select
-              id="time-control"
-              className="time-control-select"
-              value={timeControl}
-              onChange={(event) =>
-                setTimeControl(event.target.value as TimeControl)
-              }
-            >
-              {timeControls.map((control) => (
-                <option key={control.value} value={control.value}>
-                  {control.label}
-                </option>
-              ))}
-            </select>
-
-            <button type="submit" className="primary-button">
-              Sıraya katıl <span aria-hidden="true">→</span>
-            </button>
-          </form>
-
-          {notice && (
-            <p className="notice" role="status">
-              {notice}
-            </p>
-          )}
-
-          {adminMode && (
-            <p className="admin-notice">
-              Yönetici modu açık. Oyuncuları taşıyabilir veya sıradan
-              çıkarabilirsin.
-            </p>
-          )}
-        </div>
+        </section>
       </section>
 
       <footer className="site-footer">
-        <span>© SolbekErsin</span>
-        <span>Satranç topluluğu</span>
+        <a
+          className="footer-brand"
+          href="/"
+          aria-label="SolbekErsin ana sayfa"
+        >
+          ♞ SolbekErsin
+        </a>
+
+        <span>STRATEJİNİ KONUŞTUR.</span>
+
+        <div className="social-links">
+          <a
+            href="https://www.youtube.com/@SolBekersun"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="SolbekErsin YouTube kanalı"
+            title="YouTube"
+          >
+            YouTube ↗
+          </a>
+
+          <a
+            href="https://www.tiktok.com/@solbek.ersin"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="SolbekErsin TikTok hesabı"
+            title="TikTok"
+          >
+            TikTok ↗
+          </a>
+
+          <a
+            href="https://kick.com/solbekersin"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="SolbekErsin Kick kanalı"
+            title="Kick"
+          >
+            Kick ↗
+          </a>
+
+          <a
+            href="https://www.twitch.tv/solbekersin"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="SolbekErsin Twitch kanalı"
+            title="Twitch"
+          >
+            Twitch ↗
+          </a>
+        </div>
+
+        <span>© 2026 SolbekErsin</span>
       </footer>
     </main>
   );

@@ -5,9 +5,6 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "SolBekErsin",
   description: "Canlı satranç oyuncu sırası",
-  icons: {
-    icon: "/icon.png",
-  },
 };
 
 export default function RootLayout({
