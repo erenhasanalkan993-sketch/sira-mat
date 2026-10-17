@@ -266,9 +266,9 @@ export default function Home() {
           </div>
 
           <h1>
-            SIRANI BEKLE,
+            Sıranı Bekle,
             <br />
-            <span>HAMLENİ YAP</span>
+            <span>Hamleni Yap</span>
           </h1>
 
           <p className="hero-description">
@@ -333,7 +333,7 @@ export default function Home() {
 
           <div className="hero-art-label">
             <span className="live-dot" />
-            YOUR NEXT MOVE
+            Her oyun yeni bir macera, Satrançdaki sonsuz olasılıkları birlikte yaşayalım.
           </div>
         </div>
       </section>
