@@ -1,10 +1,15 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-type TimeControl = "1+0" | "3+0" | "3+2" | "5+0" | "10+0" | "15+10";
+type TimeControl =
+  | "1+0"
+  | "3+0"
+  | "3+2"
+  | "5+0"
+  | "10+0"
+  | "15+10";
 
 type Player = {
   id: number;
@@ -26,9 +31,11 @@ export default function Home() {
   const [username, setUsername] = useState("");
   const [platform, setPlatform] =
     useState<"Lichess" | "Chess.com">("Lichess");
-  const [timeControl, setTimeControl] = useState<TimeControl>("3+0");
+  const [timeControl, setTimeControl] =
+    useState<TimeControl>("3+0");
   const [players, setPlayers] = useState<Player[]>([]);
-  const [currentPlayer, setCurrentPlayer] = useState<Player | null>(null);
+  const [currentPlayer, setCurrentPlayer] =
+    useState<Player | null>(null);
   const [adminMode, setAdminMode] = useState(false);
   const [password, setPassword] = useState("");
   const [adminEmail, setAdminEmail] = useState("");
@@ -64,6 +71,32 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  async function callNextPlayer() {
+    if (players.length === 0) {
+      setMessage("Sırada bekleyen oyuncu yok.");
+      return;
+    }
+
+    const nextPlayer = players[0];
+
+    const { error } = await supabase
+      .from("queue_players")
+      .update({ status: "called" })
+      .eq("id", nextPlayer.id)
+      .eq("status", "waiting");
+
+    if (error) {
+      setMessage("Oyuncu çağrılamadı: " + error.message);
+      return;
+    }
+
+    setCurrentPlayer(nextPlayer);
+    setPlayers((old) =>
+      old.filter((player) => player.id !== nextPlayer.id)
+    );
+    setMessage("");
+  }
+
   async function joinQueue() {
     if (joining) return;
 
@@ -97,12 +130,14 @@ export default function Home() {
         return;
       }
 
-      const { error } = await supabase.from("queue_players").insert({
-        username: name,
-        platform,
-        time_control: timeControl,
-        status: "waiting",
-      });
+      const { error } = await supabase
+        .from("queue_players")
+        .insert({
+          username: name,
+          platform,
+          time_control: timeControl,
+          status: "waiting",
+        });
 
       if (error) {
         console.error(error.message);
@@ -116,17 +151,6 @@ export default function Home() {
     } finally {
       setJoining(false);
     }
-  }
-
-  function callNextPlayer() {
-    if (players.length === 0) {
-      setMessage("Sırada bekleyen oyuncu yok.");
-      return;
-    }
-
-    setCurrentPlayer(players[0]);
-    setPlayers((old) => old.slice(1));
-    setMessage("");
   }
 
   function finishMatch() {
@@ -279,7 +303,9 @@ export default function Home() {
                 id="platform"
                 value={platform}
                 onChange={(event) =>
-                  setPlatform(event.target.value as "Lichess" | "Chess.com")
+                  setPlatform(
+                    event.target.value as "Lichess" | "Chess.com"
+                  )
                 }
               >
                 <option value="Lichess">Lichess</option>
@@ -326,9 +352,7 @@ export default function Home() {
             <div className="form-content">
               {!admin ? (
                 <>
-                  <p className="muted">
-                    Yönetici hesabınla giriş yap.
-                  </p>
+                  <p className="muted">Yönetici hesabınla giriş yap.</p>
 
                   <label htmlFor="adminEmail">E-posta adresi</label>
                   <input
@@ -353,7 +377,10 @@ export default function Home() {
                     }}
                   />
 
-                  <button className="primary-button" onClick={() => void loginAdmin()}>
+                  <button
+                    className="primary-button"
+                    onClick={() => void loginAdmin()}
+                  >
                     Giriş yap <span>↗</span>
                   </button>
                 </>
@@ -371,7 +398,7 @@ export default function Home() {
 
                   <button
                     className="primary-button"
-                    onClick={callNextPlayer}
+                    onClick={() => void callNextPlayer()}
                   >
                     Sıradaki oyuncuyu çağır <span>→</span>
                   </button>
@@ -381,16 +408,19 @@ export default function Home() {
                       <div className="eyebrow">ÇAĞRILAN OYUNCU</div>
                       <h3>{currentPlayer.username}</h3>
                       <p>
-                        {currentPlayer.platform} ·{" "}
-                        {currentPlayer.time_control}
+                        {currentPlayer.platform} · {currentPlayer.time_control}
                       </p>
 
                       <a
                         className="profile-link"
                         href={
                           currentPlayer.platform === "Lichess"
-                            ? `https://lichess.org/@/${encodeURIComponent(currentPlayer.username)}`
-                            : `https://www.chess.com/member/${encodeURIComponent(currentPlayer.username)}`
+                            ? `https://lichess.org/@/${encodeURIComponent(
+                                currentPlayer.username
+                              )}`
+                            : `https://www.chess.com/member/${encodeURIComponent(
+                                currentPlayer.username
+                              )}`
                         }
                         target="_blank"
                         rel="noreferrer"
