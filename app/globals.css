@@ -1,6 +1,4 @@
-
 @import "tailwindcss";
-
 :root {
   --background: #080b09;
   --surface: #101511;
@@ -12,16 +10,13 @@
   --green-bright: #c9ff91;
   --green-dark: #192b18;
 }
-
 * {
   box-sizing: border-box;
 }
-
 html {
   scroll-behavior: smooth;
   background: var(--background);
 }
-
 body {
   margin: 0;
   color: var(--text);
@@ -29,34 +24,28 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
-
 button,
 input,
 select {
   font: inherit;
 }
-
 button,
 a,
 input,
 select {
   -webkit-tap-highlight-color: transparent;
 }
-
 button {
   cursor: pointer;
 }
-
 button:disabled {
   cursor: wait;
   opacity: 0.65;
 }
-
 a {
   color: inherit;
   text-decoration: none;
 }
-
 button:focus-visible,
 a:focus-visible,
 input:focus-visible,
@@ -64,12 +53,10 @@ select:focus-visible {
   outline: 2px solid var(--green);
   outline-offset: 4px;
 }
-
 ::selection {
   color: #080b09;
   background: var(--green);
 }
-
 /* Ana sayfa arka planı */
 .site-shell {
   position: relative;
@@ -90,7 +77,6 @@ select:focus-visible {
     ),
     #080b09;
 }
-
 .ambient {
   position: absolute;
   z-index: -1;
@@ -102,20 +88,17 @@ select:focus-visible {
   opacity: 0.11;
   animation: ambient-drift 12s ease-in-out infinite alternate;
 }
-
 .ambient-one {
   top: 180px;
   right: -180px;
   background: #76ff4d;
 }
-
 .ambient-two {
   top: 720px;
   left: -230px;
   background: #b4ff70;
   animation-delay: -5s;
 }
-
 /* Üst menü */
 .topbar {
   position: relative;
@@ -127,7 +110,6 @@ select:focus-visible {
   min-height: 88px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
-
 .brand {
   display: inline-flex;
   align-items: center;
@@ -135,8 +117,48 @@ select:focus-visible {
   font-size: 19px;
   font-weight: 900;
   letter-spacing: -0.8px;
+  text-decoration: none;
 }
-
+/* Üst menüdeki satranç logosu */
+.brand-chess {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 92px;
+  height: 46px;
+  flex-shrink: 0;
+  color: #e6c27a;
+  font-family: "Segoe UI Symbol", "DejaVu Sans", Georgia, serif;
+  line-height: 1;
+}
+.brand-chess span {
+  display: inline-block;
+  font-size: 29px;
+}
+.brand-chess .chess-king,
+.brand-chess .chess-queen {
+  color: #e6c27a;
+}
+.brand-chess .chess-bishop {
+  font-size: 25px;
+  color: #f5f0e5;
+  transform: translateY(-5px);
+}
+.brand-chess .chess-pawn {
+  position: absolute;
+  font-size: 15px;
+  color: #f5f0e5;
+}
+.brand-chess .pawn-one {
+  top: 0;
+  right: 3px;
+}
+.brand-chess .pawn-two {
+  right: 0;
+  bottom: 0;
+}
 .brand-icon {
   display: grid;
   width: 42px;
@@ -149,16 +171,13 @@ select:focus-visible {
   font-size: 29px;
   transition: transform 250ms ease, box-shadow 250ms ease;
 }
-
 .brand:hover .brand-icon {
   transform: rotate(-8deg) scale(1.05);
   box-shadow: 0 0 25px rgba(180, 255, 112, 0.12);
 }
-
 .brand-accent {
   color: var(--green);
 }
-
 .brand small {
   display: block;
   margin-top: 4px;
@@ -167,7 +186,6 @@ select:focus-visible {
   font-weight: 700;
   letter-spacing: 2.4px;
 }
-
 .admin-toggle {
   display: inline-flex;
   align-items: center;
@@ -186,17 +204,14 @@ select:focus-visible {
     background 200ms ease,
     transform 200ms ease;
 }
-
 .admin-toggle:hover {
   transform: translateY(-2px);
   border-color: rgba(180, 255, 112, 0.35);
   background: rgba(180, 255, 112, 0.07);
 }
-
 .admin-toggle span {
   color: var(--green);
 }
-
 /* Ana tanıtım alanı */
 .hero {
   position: relative;
@@ -207,13 +222,11 @@ select:focus-visible {
   padding: 56px 0 65px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
-
 .hero-copy {
   position: relative;
   z-index: 1;
   animation: reveal-up 700ms ease both;
 }
-
 .eyebrow {
   display: flex;
   align-items: center;
@@ -223,7 +236,6 @@ select:focus-visible {
   font-weight: 800;
   letter-spacing: 2.2px;
 }
-
 .live-dot {
   position: relative;
   display: inline-block;
@@ -234,7 +246,6 @@ select:focus-visible {
   background: var(--green);
   box-shadow: 0 0 12px rgba(180, 255, 112, 0.65);
 }
-
 .live-dot::after {
   position: absolute;
   inset: -4px;
@@ -243,7 +254,6 @@ select:focus-visible {
   content: "";
   animation: dot-pulse 2s ease-out infinite;
 }
-
 /* Başlık: normal başlık biçimi ve biraz daha küçük */
 .hero h1,
 .hero .hero-title {
@@ -254,19 +264,16 @@ select:focus-visible {
   letter-spacing: -1.8px;
   text-transform: none;
 }
-
 .hero h1 span {
   color: var(--green);
   text-shadow: 0 0 35px rgba(180, 255, 112, 0.12);
 }
-
 .hero-description {
   max-width: 430px;
   color: #9aa59b;
   font-size: 14px;
   line-height: 1.9;
 }
-
 .hero-link {
   display: inline-flex;
   align-items: center;
@@ -277,21 +284,17 @@ select:focus-visible {
   font-weight: 700;
   transition: color 200ms ease;
 }
-
 .hero-link:hover {
   color: var(--green);
 }
-
 .hero-link span {
   color: var(--green);
   font-size: 18px;
   transition: transform 200ms ease;
 }
-
 .hero-link:hover span {
   transform: translateY(4px);
 }
-
 /* Satranç taşları alanı */
 .hero-art {
   position: relative;
@@ -301,7 +304,6 @@ select:focus-visible {
   overflow: hidden;
   animation: reveal-up 900ms ease both;
 }
-
 .hero-glow {
   position: absolute;
   width: 210px;
@@ -311,14 +313,12 @@ select:focus-visible {
   filter: blur(25px);
   animation: glow-breathe 5s ease-in-out infinite;
 }
-
 .hero-back-pieces {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
 }
-
 .hero-piece {
   position: absolute;
   display: block;
@@ -332,34 +332,29 @@ select:focus-visible {
     0 5px 16px rgba(0, 0, 0, 0.6);
   animation: chess-piece-float 5s ease-in-out infinite;
 }
-
 .hero-rook {
   top: 16%;
   left: 7%;
   animation-delay: -1s;
 }
-
 .hero-bishop {
   top: 17%;
   right: 7%;
   color: #d5e5ca;
   animation-delay: -2s;
 }
-
 .hero-queen {
   bottom: 20%;
   left: 14%;
   color: #c4ff8a;
   animation-delay: -3s;
 }
-
 .hero-king {
   right: 14%;
   bottom: 20%;
   color: #f0f8e9;
   animation-delay: -4s;
 }
-
 .hero-knight {
   position: relative;
   z-index: 2;
@@ -372,7 +367,6 @@ select:focus-visible {
     0 0 65px rgba(180, 255, 112, 0.11);
   animation: knight-float 5s ease-in-out infinite;
 }
-
 .orbit {
   position: absolute;
   width: 250px;
@@ -380,12 +374,10 @@ select:focus-visible {
   border: 1px solid rgba(180, 255, 112, 0.14);
   border-radius: 50%;
 }
-
 .orbit-one {
   transform: scaleY(0.38) rotate(-25deg);
   animation: orbit-turn 15s linear infinite;
 }
-
 .orbit-two {
   width: 285px;
   height: 285px;
@@ -393,7 +385,6 @@ select:focus-visible {
   opacity: 0.5;
   animation: orbit-turn 32s linear infinite reverse;
 }
-
 /* Atın altındaki yeni açıklama */
 .hero-art-label {
   position: absolute;
@@ -413,11 +404,9 @@ select:focus-visible {
   text-align: center;
   overflow-wrap: anywhere;
 }
-
 .hero-art-label > span:last-child {
   min-width: 0;
 }
-
 /* Oyuncu listesi üstte, katılma alanı altta */
 .main-grid {
   display: grid;
@@ -429,15 +418,12 @@ select:focus-visible {
   margin: 0 auto;
   padding: 38px 0 65px;
 }
-
 .queue-panel {
   order: 1;
 }
-
 .join-panel {
   order: 2;
 }
-
 .panel {
   min-width: 0;
   overflow: hidden;
@@ -449,15 +435,12 @@ select:focus-visible {
   box-shadow: 0 18px 55px rgba(0, 0, 0, 0.14);
   animation: reveal-up 700ms ease both;
 }
-
 .join-panel {
   animation-delay: 80ms;
 }
-
 .queue-panel {
   animation-delay: 170ms;
 }
-
 .panel-heading {
   display: flex;
   align-items: center;
@@ -465,7 +448,6 @@ select:focus-visible {
   padding: 24px 24px 21px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.065);
 }
-
 .section-icon {
   display: grid;
   flex: 0 0 auto;
@@ -478,12 +460,10 @@ select:focus-visible {
   color: var(--green);
   font-size: 25px;
 }
-
 .panel-heading .eyebrow {
   margin-bottom: 7px;
   font-size: 9px;
 }
-
 .panel-heading h2,
 .queue-heading h2 {
   margin: 0;
@@ -491,19 +471,16 @@ select:focus-visible {
   font-weight: 800;
   letter-spacing: -0.7px;
 }
-
 /* Sıraya katılma formu */
 .form-content {
   padding: 22px 24px 24px;
 }
-
 .muted {
   margin: 0 0 22px;
   color: var(--muted);
   font-size: 12px;
   line-height: 1.8;
 }
-
 .form-content label {
   display: block;
   margin: 18px 0 9px;
@@ -511,7 +488,6 @@ select:focus-visible {
   font-size: 11px;
   font-weight: 700;
 }
-
 .form-content input,
 .form-content select {
   display: block;
@@ -527,21 +503,17 @@ select:focus-visible {
   font-size: 12px;
   transition: border-color 200ms ease, box-shadow 200ms ease;
 }
-
 .form-content input::placeholder {
   color: #58645a;
 }
-
 .form-content select {
   color-scheme: dark;
 }
-
 .form-content input:focus,
 .form-content select:focus {
   border-color: rgba(180, 255, 112, 0.65);
   box-shadow: 0 0 0 3px rgba(180, 255, 112, 0.07);
 }
-
 .primary-button {
   display: flex;
   align-items: center;
@@ -563,21 +535,17 @@ select:focus-visible {
     box-shadow 200ms ease,
     filter 200ms ease;
 }
-
 .primary-button:hover:not(:disabled) {
   transform: translateY(-2px);
   filter: brightness(1.05);
   box-shadow: 0 8px 28px rgba(161, 255, 94, 0.19);
 }
-
 .primary-button:active:not(:disabled) {
   transform: translateY(0) scale(0.99);
 }
-
 .primary-button span {
   font-size: 18px;
 }
-
 .notice {
   display: flex;
   align-items: flex-start;
@@ -589,11 +557,9 @@ select:focus-visible {
   font-size: 10px;
   line-height: 1.7;
 }
-
 .notice span {
   color: var(--green);
 }
-
 .feedback {
   margin-top: 14px;
   padding: 12px;
@@ -606,7 +572,6 @@ select:focus-visible {
   animation: reveal-up 250ms ease both;
   overflow-wrap: anywhere;
 }
-
 .admin-status {
   display: flex;
   align-items: center;
@@ -616,7 +581,6 @@ select:focus-visible {
   font-size: 12px;
   font-weight: 700;
 }
-
 .current-player {
   margin-top: 20px;
   padding: 18px;
@@ -625,24 +589,20 @@ select:focus-visible {
   background: rgba(180, 255, 112, 0.045);
   animation: reveal-up 300ms ease both;
 }
-
 .current-player .eyebrow {
   font-size: 9px;
 }
-
 .current-player h3 {
   margin: 12px 0 7px;
   color: var(--green);
   font-size: 23px;
   overflow-wrap: anywhere;
 }
-
 .current-player p {
   margin: 0 0 12px;
   color: var(--muted);
   font-size: 12px;
 }
-
 .profile-link {
   display: inline-block;
   margin-bottom: 15px;
@@ -650,11 +610,9 @@ select:focus-visible {
   font-size: 12px;
   font-weight: 700;
 }
-
 .profile-link:hover {
   text-decoration: underline;
 }
-
 .secondary-button {
   display: block;
   width: 100%;
@@ -669,33 +627,27 @@ select:focus-visible {
   font-weight: 700;
   transition: border-color 200ms ease, background 200ms ease;
 }
-
 .secondary-button:hover {
   border-color: rgba(180, 255, 112, 0.35);
   background: rgba(180, 255, 112, 0.055);
 }
-
 /* Oyuncu sırası */
 .queue-panel {
   padding: 24px;
 }
-
 .queue-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 15px;
 }
-
 .queue-heading .eyebrow {
   margin-bottom: 9px;
   font-size: 9px;
 }
-
 .queue-heading h2 {
   font-size: 24px;
 }
-
 .queue-count {
   display: flex;
   align-items: baseline;
@@ -705,17 +657,14 @@ select:focus-visible {
   border-radius: 10px;
   background: rgba(180, 255, 112, 0.05);
 }
-
 .queue-count strong {
   color: var(--green);
   font-size: 20px;
 }
-
 .queue-count span {
   color: #899489;
   font-size: 10px;
 }
-
 .queue-status {
   display: flex;
   align-items: center;
@@ -726,7 +675,6 @@ select:focus-visible {
   font-weight: 800;
   letter-spacing: 1.6px;
 }
-
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -739,19 +687,16 @@ select:focus-visible {
   border-radius: 13px;
   background: rgba(255, 255, 255, 0.012);
 }
-
 .empty-chess {
   margin-bottom: 16px;
   color: rgba(180, 255, 112, 0.7);
   font-size: 52px;
   animation: knight-float 4s ease-in-out infinite;
 }
-
 .empty-state strong {
   color: #e7efe5;
   font-size: 14px;
 }
-
 .empty-state p {
   max-width: 260px;
   margin: 9px 0 0;
@@ -759,7 +704,6 @@ select:focus-visible {
   font-size: 11px;
   line-height: 1.8;
 }
-
 .loading-spinner {
   width: 28px;
   height: 28px;
@@ -769,13 +713,11 @@ select:focus-visible {
   border-radius: 50%;
   animation: orbit-turn 800ms linear infinite;
 }
-
 .player-list {
   display: flex;
   flex-direction: column;
   gap: 9px;
 }
-
 .player-row {
   display: flex;
   align-items: center;
@@ -791,13 +733,11 @@ select:focus-visible {
     border-color 200ms ease,
     background 200ms ease;
 }
-
 .player-row:hover {
   transform: translateX(3px);
   border-color: rgba(180, 255, 112, 0.21);
   background: rgba(180, 255, 112, 0.035);
 }
-
 .player-position {
   flex: 0 0 25px;
   color: #758176;
@@ -805,7 +745,6 @@ select:focus-visible {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
-
 .player-avatar {
   display: grid;
   flex: 0 0 37px;
@@ -819,7 +758,6 @@ select:focus-visible {
   font-size: 14px;
   font-weight: 900;
 }
-
 .player-info {
   display: flex;
   flex: 1;
@@ -827,7 +765,6 @@ select:focus-visible {
   gap: 5px;
   min-width: 0;
 }
-
 .player-info strong {
   overflow: hidden;
   color: #e9f0e7;
@@ -835,12 +772,10 @@ select:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .player-info span {
   color: #7e8b7f;
   font-size: 10px;
 }
-
 .time-badge {
   flex: 0 0 auto;
   padding: 7px 9px;
@@ -851,7 +786,6 @@ select:focus-visible {
   font-size: 10px;
   font-weight: 800;
 }
-
 .remove-button {
   flex: 0 0 29px;
   width: 29px;
@@ -864,11 +798,9 @@ select:focus-visible {
   line-height: 1;
   transition: background 200ms ease;
 }
-
 .remove-button:hover {
   background: rgba(255, 115, 115, 0.14);
 }
-
 /* Alt bilgi alanı */
 .site-footer {
   display: flex;
@@ -878,25 +810,21 @@ select:focus-visible {
   min-height: 80px;
   border-top: 1px solid rgba(255, 255, 255, 0.075);
 }
-
 .footer-brand {
   color: #e5eee3;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 1px;
 }
-
 .footer-brand:first-letter {
   color: var(--green);
 }
-
 .site-footer > span {
   color: #6e7a6f;
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 1.5px;
 }
-
 /* Sosyal medya bağlantıları */
 .social-links {
   display: flex;
@@ -905,7 +833,6 @@ select:focus-visible {
   gap: 18px;
   flex-wrap: wrap;
 }
-
 .social-links a {
   display: inline-flex;
   align-items: center;
@@ -924,90 +851,75 @@ select:focus-visible {
     background 0.2s ease,
     border-color 0.2s ease;
 }
-
 .social-links a:hover {
   opacity: 0.9;
   transform: translateY(-2px);
   border-color: var(--green);
   background: rgba(180, 255, 112, 0.09);
 }
-
 /* Animasyonlar */
 @keyframes reveal-up {
   from {
     opacity: 0;
     transform: translateY(14px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-
 @keyframes knight-float {
   0%,
   100% {
     transform: translateY(0);
   }
-
   50% {
     transform: translateY(-9px);
   }
 }
-
 @keyframes chess-piece-float {
   0%,
   100% {
     transform: translateY(0);
   }
-
   50% {
     transform: translateY(-7px);
   }
 }
-
 @keyframes glow-breathe {
   0%,
   100% {
     opacity: 0.55;
     transform: scale(0.9);
   }
-
   50% {
     opacity: 1;
     transform: scale(1.12);
   }
 }
-
 @keyframes dot-pulse {
   0% {
     opacity: 0.8;
     transform: scale(0.75);
   }
-
   100% {
     opacity: 0;
     transform: scale(1.9);
   }
 }
-
 @keyframes orbit-turn {
   to {
     transform: rotate(360deg);
   }
 }
-
 @keyframes ambient-drift {
   from {
     transform: translate3d(0, 0, 0);
   }
-
   to {
     transform: translate3d(-30px, 35px, 0);
   }
 }
-
 /* Geniş ekranlar */
 @media (min-width: 1400px) {
   .site-shell {
@@ -1015,91 +927,87 @@ select:focus-visible {
     padding-left: max(7.5%, calc((100% - 1220px) / 2));
   }
 }
-
 /* Tablet */
 @media (max-width: 900px) {
   .site-shell {
     padding-right: 5%;
     padding-left: 5%;
   }
-
   .hero {
     min-height: 365px;
   }
-
   .hero h1,
   .hero .hero-title {
     letter-spacing: -1.3px;
   }
-
   .hero-art {
     min-height: 270px;
   }
-
   .hero-knight {
     font-size: 175px;
   }
-
   .hero-piece {
     font-size: 48px;
   }
-
   .orbit-one {
     width: 210px;
     height: 210px;
   }
-
   .orbit-two {
     width: 245px;
     height: 245px;
   }
-
   .main-grid {
     grid-template-columns: minmax(0, 1fr);
     max-width: 680px;
     gap: 20px;
   }
 }
-
 /* Mobil */
 @media (max-width: 560px) {
   .site-shell {
     padding-right: 18px;
     padding-left: 18px;
   }
-
   .topbar {
     min-height: 73px;
   }
-
+  .brand-chess {
+    width: 80px;
+    height: 40px;
+  }
+  .brand-chess span {
+    font-size: 25px;
+  }
+  .brand-chess .chess-bishop {
+    font-size: 22px;
+  }
+  .brand-chess .chess-pawn {
+    font-size: 12px;
+  }
   .brand {
     gap: 8px;
     font-size: 16px;
   }
-
   .brand-icon {
     width: 37px;
     height: 37px;
     font-size: 25px;
   }
-
   .brand small {
     font-size: 7px;
     letter-spacing: 1.8px;
   }
-
   .admin-toggle {
     gap: 6px;
     min-height: 38px;
     padding: 0 10px;
     font-size: 10px;
   }
-
   .hero {
     grid-template-columns: minmax(0, 1fr);
     padding: 47px 0 29px;
   }
-
   .hero h1,
   .hero .hero-title {
     margin-top: 23px;
@@ -1107,51 +1015,40 @@ select:focus-visible {
     letter-spacing: -1.3px;
     line-height: 1.15;
   }
-
   .hero-description {
     max-width: 370px;
     font-size: 13px;
   }
-
   .hero-art {
     min-height: 250px;
     margin-top: 10px;
   }
-
   .hero-knight {
     font-size: 155px;
   }
-
   .hero-piece {
     font-size: 40px;
   }
-
   .hero-rook {
     left: 3%;
   }
-
   .hero-bishop {
     right: 3%;
   }
-
   .hero-queen {
     left: 9%;
   }
-
   .hero-king {
     right: 9%;
   }
-
   .orbit-one {
     width: 190px;
     height: 190px;
   }
-
   .orbit-two {
     width: 220px;
     height: 220px;
   }
-
   .hero-art-label {
     bottom: 2px;
     width: calc(100% - 8px);
@@ -1160,73 +1057,58 @@ select:focus-visible {
     font-size: 10px;
     line-height: 1.5;
   }
-
   .main-grid {
     padding-top: 24px;
     padding-bottom: 40px;
   }
-
   .panel-heading {
     padding: 19px;
   }
-
   .form-content {
     padding: 18px 19px 20px;
   }
-
   .queue-panel {
     padding: 19px;
   }
-
   .queue-heading h2 {
     font-size: 21px;
   }
-
   .queue-count {
     gap: 5px;
     padding: 8px;
   }
-
   .queue-count strong {
     font-size: 18px;
   }
-
   .player-row {
     gap: 8px;
     padding: 10px 8px;
   }
-
   .player-position {
     flex-basis: 21px;
     font-size: 10px;
   }
-
   .player-avatar {
     flex-basis: 32px;
     width: 32px;
     height: 32px;
     font-size: 12px;
   }
-
   .player-info strong {
     font-size: 11px;
   }
-
   .player-info span {
     font-size: 9px;
   }
-
   .time-badge {
     padding: 6px 7px;
     font-size: 9px;
   }
-
   .remove-button {
     flex-basis: 25px;
     width: 25px;
     height: 27px;
   }
-
   .site-footer {
     flex-wrap: wrap;
     justify-content: center;
@@ -1234,17 +1116,14 @@ select:focus-visible {
     padding: 20px 0;
     text-align: center;
   }
-
   .site-footer > span {
     font-size: 8px;
     letter-spacing: 1px;
   }
-
   .site-footer > span:nth-child(2) {
     order: 3;
     width: 100%;
   }
-
   .social-links {
     width: 100%;
     justify-content: center;
@@ -1252,7 +1131,6 @@ select:focus-visible {
     order: 2;
   }
 }
-
 /* Hareket azaltma erişilebilirlik ayarı */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1263,4 +1141,168 @@ select:focus-visible {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+.hero-extra-piece {
+  position: absolute;
+  z-index: 2;
+  color: #d9e9d1;
+  font-size: clamp(48px, 6vw, 76px);
+  line-height: 1;
+  text-shadow: 0 0 30px rgba(180, 255, 112, 0.2);
+  animation: chess-piece-float 5s ease-in-out infinite;
+}
+.hero-king {
+  top: 20%;
+  right: 8%;
+  animation-delay: -1.5s;
+}
+.hero-queen {
+  bottom: 20%;
+  left: 8%;
+  animation-delay: -3s;
+}
+@media (max-width: 600px) {
+  .hero-extra-piece {
+    font-size: 48px;
+  }
+  
+/* ==========================================
+   SATRANÇ LOGOLARI - GÖRÜNÜRLÜK DÜZELTMESİ
+   ========================================== */
+
+/* Üst menüdeki küçük satranç logosu */
+.topbar .brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  min-width: 92px;
+  min-height: 46px;
+  text-decoration: none;
+  visibility: visible;
+  opacity: 1;
+}
+
+.topbar .brand-chess {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 92px;
+  height: 46px;
+  flex-shrink: 0;
+  overflow: visible;
+  color: #e6c27a;
+  font-family: "Segoe UI Symbol", "DejaVu Sans", serif;
+  line-height: 1;
+  visibility: visible;
+  opacity: 1;
+}
+
+.topbar .brand-chess span {
+  display: inline-block;
+  position: relative;
+  font-size: 29px;
+  line-height: 1;
+  visibility: visible;
+  opacity: 1;
+}
+
+.topbar .brand-chess .chess-king,
+.topbar .brand-chess .chess-queen {
+  color: #e6c27a;
+}
+
+.topbar .brand-chess .chess-bishop {
+  color: #f5f0e5;
+  font-size: 25px;
+  transform: translateY(-5px);
+}
+
+.topbar .brand-chess .chess-pawn {
+  position: absolute;
+  color: #f5f0e5;
+  font-size: 15px;
+}
+
+.topbar .brand-chess .pawn-one {
+  top: 0;
+  right: 3px;
+}
+
+.topbar .brand-chess .pawn-two {
+  right: 0;
+  bottom: 0;
+}
+
+/* Açılış bölümündeki büyük at, şah ve vezir */
+.hero .hero-art {
+  position: relative;
+  overflow: visible;
+}
+
+.hero .hero-knight {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  visibility: visible;
+  opacity: 1;
+  color: #e6c27a;
+  font-family: "Segoe UI Symbol", "DejaVu Sans", serif;
+  line-height: 1;
+}
+
+.hero .hero-extra-piece {
+  position: absolute;
+  z-index: 3;
+  display: block;
+  visibility: visible;
+  opacity: 1;
+  font-family: "Segoe UI Symbol", "DejaVu Sans", serif;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.hero .hero-king {
+  color: #f5f0e5;
+}
+
+.hero .hero-queen {
+  color: #e6c27a;
+}
+
+/* Alt kısımdaki marka */
+.site-footer .footer-brand {
+  display: inline-flex;
+  align-items: center;
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Küçük ekranlar */
+@media (max-width: 600px) {
+  .topbar .brand {
+    min-width: 80px;
+    min-height: 40px;
+  }
+
+  .topbar .brand-chess {
+    width: 80px;
+    height: 40px;
+  }
+
+  .topbar .brand-chess span {
+    font-size: 25px;
+  }
+
+  .topbar .brand-chess .chess-bishop {
+    font-size: 22px;
+  }
+
+  .topbar .brand-chess .chess-pawn {
+    font-size: 12px;
+  }
+}
+
 }

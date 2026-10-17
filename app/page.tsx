@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState } from "react";
@@ -234,17 +233,18 @@ export default function Home() {
       <div className="ambient ambient-two" />
 
       <header className="topbar">
-        <a
-          className="brand"
-          href="#"
-          aria-label="SolbekErsin ana sayfa"
-        >
-          <span className="brand-icon">♞</span>
-          <span>
-            Solbek<span className="brand-accent">Ersin</span>
-            <small>CHESS COMMUNITY</small>
-          </span>
-        </a>
+        <a href="/" className="...">
+  <img
+    src="/logo.png"
+    alt="SolbekErsin"
+    style={{
+      height: "52px",
+      width: "auto",
+      objectFit: "contain",
+      display: "block",
+    }}
+  />
+</a>
 
         <button
           className="admin-toggle"
@@ -281,11 +281,55 @@ export default function Home() {
           </a>
         </div>
 
-        <div className="hero-art" aria-label="Satranç atı">
+        <div className="hero-art" aria-label="Satranç taşları">
           <div className="orbit orbit-one" />
           <div className="orbit orbit-two" />
           <div className="hero-glow" />
-          <span className="hero-knight">♞</span>
+
+          {/* Ana taş: At */}
+          <span className="hero-knight" aria-hidden="true">
+            ♞
+          </span>
+
+          {/* Şah */}
+          <span
+            className="hero-extra-piece hero-king"
+            style={{ top: "15%", right: "12%" }}
+            aria-hidden="true"
+          >
+            ♚
+          </span>
+
+          {/* Vezir */}
+          <span
+            className="hero-extra-piece hero-queen"
+            style={{ bottom: "20%", left: "10%" }}
+            aria-hidden="true"
+          >
+            ♛
+          </span>
+
+          {/* Fil */}
+          <span
+            className="hero-extra-piece hero-bishop"
+            style={{ top: "18%", left: "12%" }}
+            aria-hidden="true"
+          >
+            ♝
+          </span>
+
+          {/* Tek piyon */}
+          <span
+            className="hero-extra-piece"
+            style={{
+              bottom: "17%",
+              right: "14%",
+              fontSize: "clamp(32px, 4vw, 48px)",
+            }}
+            aria-hidden="true"
+          >
+            ♟
+          </span>
 
           <div className="hero-art-label">
             <span className="live-dot" />
@@ -376,7 +420,9 @@ export default function Home() {
             <div className="form-content">
               {!admin ? (
                 <>
-                  <p className="muted">Yönetici hesabınla giriş yap.</p>
+                  <p className="muted">
+                    Yönetici hesabınla giriş yap.
+                  </p>
 
                   <label htmlFor="adminEmail">E-posta adresi</label>
                   <input
@@ -432,7 +478,8 @@ export default function Home() {
                       <div className="eyebrow">ÇAĞRILAN OYUNCU</div>
                       <h3>{currentPlayer.username}</h3>
                       <p>
-                        {currentPlayer.platform} · {currentPlayer.time_control}
+                        {currentPlayer.platform} ·{" "}
+                        {currentPlayer.time_control}
                       </p>
 
                       <a
