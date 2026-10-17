@@ -233,19 +233,38 @@ export default function Home() {
       <div className="ambient ambient-two" />
 
       <header className="topbar">
-       <a href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none" }}>
+<a
+  href="/"
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    gap: "10px",
+    textDecoration: "none",
+    marginRight: "auto",
+    flexShrink: 0,
+  }}
+>
   <img
     src="/logo.png"
-    alt="SolbekErsin"
+    alt="SolbekErsin logosu"
     style={{
-      height: "52px",
+      height: "48px",
       width: "auto",
       objectFit: "contain",
       display: "block",
     }}
   />
-  <span style={{ fontSize: "16px", fontWeight: 600, color: "inherit" }}>
-    SolbekErsin
+  <span
+    style={{
+      fontSize: "17px",
+      fontWeight: 800,
+      letterSpacing: "-0.5px",
+      color: "inherit",
+      whiteSpace: "nowrap",
+    }}
+  >
+    Solbek<span style={{ fontWeight: 500 }}>Ersin</span>
   </span>
 </a>
 
@@ -275,8 +294,7 @@ export default function Home() {
           </h1>
 
           <p className="hero-description">
-            Rakibini bul, oyun süreni seç ve satranç mücadelesine katıl.
-            Tahta seni bekliyor.
+            Kullanıcı adını yaz, platformu ve zaman temposunu seç, SolbekErsin'le maç yaparak hünerlerini göster.
           </p>
 
           <a className="hero-link" href="#queue">
