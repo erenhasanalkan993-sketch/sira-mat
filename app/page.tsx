@@ -335,9 +335,7 @@ export default function Home() {
             SolbekErsin'e karşı oyna, gücünü göster!
           </p>
 
-          <a className="hero-link" href="#queue">
-            Oyuncu sırasını keşfet <span>↓</span>
-          </a>
+          
         </div>
 
         <div className="hero-art" aria-label="Satranç taşları">
