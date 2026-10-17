@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -71,82 +72,144 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  
-async function callNextPlayer() {
-  if (players.length === 0) {
-    setMessage("Sırada bekleyen oyuncu yok.");
-    return;
-  }
+  async function callNextPlayer() {
+    if (players.length === 0) {
+      setMessage("Sırada bekleyen oyuncu yok.");
+      return;
+    }
 
-  const nextPlayer = players[0];
+    const nextPlayer = players[0];
 
-  const { error } = await supabase
-    .from("queue_players")
-    .update({
-      status: "called",
-      called_at: new Date().toISOString(),
-    })
-    .eq("id", nextPlayer.id)
-    .eq("status", "waiting");
-
-  if (error) {
-    setMessage("Oyuncu çağrılamadı: " + error.message);
-    return;
-  }
-
-  setCurrentPlayer(nextPlayer);
-  setPlayers((old) =>
-    old.filter((player) => player.id !== nextPlayer.id)
-  );
-  setMessage("");
-}
-
-
-  
-
-async function joinQueue() {
-  if (joining) return;
-
-  const name = username.trim();
-
-  if (!name) {
-    setMessage("Lütfen kullanıcı adını yaz.");
-    return;
-  }
-
-  setJoining(true);
-  setMessage("");
-
-  try {
-    const { data: existing, error: checkError } = await supabase
+    const { error } = await supabase
       .from("queue_players")
-      .select("id, status, called_at, created_at")
-      .ilike("username", name)
-      .in("status", ["waiting", "called"])
-      .order("created_at", { ascending: false });
+      .update({
+        status: "called",
+        called_at: new Date().toISOString(),
+      })
+      .eq("id", nextPlayer.id)
+      .eq("status", "waiting");
 
-    if (checkError) {
-      setMessage("Sıra kontrol edilemedi: " + checkError.message);
+    if (error) {
+      setMessage("Oyuncu çağrılamadı: " + error.message);
       return;
     }
 
-    if (existing?.some((player) => player.status === "waiting")) {
-      setMessage("Bu nick zaten sırada.");
+    setCurrentPlayer(nextPlayer);
+    setPlayers((old) =>
+      old.filter((player) => player.id !== nextPlayer.id)
+    );
+    setMessage("");
+  }
+
+  async function joinQueue() {
+    if (joining) return;
+
+    const name = username.trim();
+
+    if (!name) {
+      setMessage("Lütfen kullanıcı adını yaz.");
       return;
     }
 
-    const lastCalled = existing?.find(
-      (player) => player.status === "called" && player.called_at
+    setJoining(true);
+    setMessage("");
+
+    try {
+      const { data: existing, error: checkError } = await supabase
+        .from("queue_players")
+        .select("id, status, called_at, created_at")
+        .ilike("username", name)
+        .in("status", ["waiting", "called"])
+        .order("created_at", { ascending: false });
+
+      if (checkError) {
+        setMessage("Sıra kontrol edilemedi: " + checkError.message);
+        return;
+      }
+
+      if (existing?.some((player) => player.status === "waiting")) {
+        setMessage("Bu nick zaten sırada.");
+        return;
+      }
+
+      const lastCalled = existing?.find(
+        (player) => player.status === "called" && player.called_at
+      );
+
+      if (lastCalled?.called_at) {
+        const elapsed =
+          Date.now() - new Date(lastCalled.called_at).getTime();
+        const remaining = Math.ceil((60000 - elapsed) / 1000);
+
+        if (remaining > 0) {
+          setMessage(
+            `Bu nick için tekrar sıraya girmek üzere ${remaining} saniye beklemelisin.`
+          );
+          return;
+        }
+      }
+
+      const { error } = await supabase
+        .from("queue_players")
+        .insert({
+          username: name,
+          platform,
+          time_control: timeControl,
+          status: "waiting",
+        });
+
+      if (error) {
+        setMessage("Sıraya katılınamadı: " + error.message);
+        return;
+      }
+
+      setUsername("");
+      setMessage("Başarılı! Sıranın sonuna eklendin. ♟");
+      await loadPlayers();
+    } finally {
+      setJoining(false);
+    }
+  }
+
+  async function cancelPlayer(player: Player) {
+    const confirmation = window.prompt(
+      `${player.username} sırasını iptal etmek için nickini yaz:`
     );
 
-    if (lastCalled?.called_at) {
+    if (confirmation === null) return;
+
+    if (
+      confirmation.trim().toLowerCase() !==
+      player.username.trim().toLowerCase()
+    ) {
+      setMessage("Nick eşleşmedi. İptal işlemi yapılmadı.");
+      return;
+    }
+
+    const { data: previousCancel, error: checkError } = await supabase
+      .from("queue_players")
+      .select("cancelled_at")
+      .ilike("username", player.username)
+      .not("cancelled_at", "is", null)
+      .order("cancelled_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (checkError) {
+      setMessage("İptal süresi kontrol edilemedi: " + checkError.message);
+      return;
+    }
+
+    if (previousCancel?.cancelled_at) {
       const elapsed =
-        Date.now() - new Date(lastCalled.called_at).getTime();
-      const remaining = Math.ceil((60000 - elapsed) / 1000);
+        Date.now() -
+        new Date(previousCancel.cancelled_at).getTime();
+
+      const remaining = Math.ceil((15000 - elapsed) / 1000);
 
       if (remaining > 0) {
         setMessage(
-          `Bu nick için tekrar sıraya girmek üzere ${remaining} saniye beklemelisin.`
+          `Tekrar iptal etmek için ${remaining} saniye beklemelisin.`
         );
         return;
       }
@@ -154,27 +217,21 @@ async function joinQueue() {
 
     const { error } = await supabase
       .from("queue_players")
-      .insert({
-        username: name,
-        platform,
-        time_control: timeControl,
-        status: "waiting",
-      });
+      .update({
+        status: "cancelled",
+        cancelled_at: new Date().toISOString(),
+      })
+      .eq("id", player.id)
+      .eq("status", "waiting");
 
     if (error) {
-      setMessage("Sıraya katılınamadı: " + error.message);
+      setMessage("Sıra iptal edilemedi: " + error.message);
       return;
     }
 
-    setUsername("");
-    setMessage("Başarılı! Sıranın sonuna eklendin. ♟");
+    setMessage(`${player.username} sırası iptal edildi.`);
     await loadPlayers();
-  } finally {
-    setJoining(false);
   }
-}
-
-
 
   function finishMatch() {
     setCurrentPlayer(null);
@@ -524,7 +581,9 @@ async function joinQueue() {
                     <span>{player.platform}</span>
                   </div>
 
-                  <span className="time-badge">{player.time_control}</span>
+                  <span className="time-badge">
+                    {player.time_control}
+                  </span>
 
                   {admin && (
                     <button
@@ -536,6 +595,16 @@ async function joinQueue() {
                       ×
                     </button>
                   )}
+
+                  <button
+                    type="button"
+                    className="remove-button"
+                    onClick={() => void cancelPlayer(player)}
+                    aria-label={`${player.username} sırasını iptal et`}
+                    title="Sırayı iptal et"
+                  >
+                    İptal et
+                  </button>
                 </div>
               ))}
             </div>
