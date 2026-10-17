@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -71,110 +72,104 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  
-async function callNextPlayer() {
-  if (players.length === 0) {
-    setMessage("Sırada bekleyen oyuncu yok.");
-    return;
-  }
-
-  const nextPlayer = players[0];
-
-  const { error } = await supabase
-    .from("queue_players")
-    .update({
-      status: "called",
-      called_at: new Date().toISOString(),
-    })
-    .eq("id", nextPlayer.id)
-    .eq("status", "waiting");
-
-  if (error) {
-    setMessage("Oyuncu çağrılamadı: " + error.message);
-    return;
-  }
-
-  setCurrentPlayer(nextPlayer);
-  setPlayers((old) =>
-    old.filter((player) => player.id !== nextPlayer.id)
-  );
-  setMessage("");
-}
-
-
-  
-
-async function joinQueue() {
-  if (joining) return;
-
-  const name = username.trim();
-
-  if (!name) {
-    setMessage("Lütfen kullanıcı adını yaz.");
-    return;
-  }
-
-  setJoining(true);
-  setMessage("");
-
-  try {
-    const { data: existing, error: checkError } = await supabase
-      .from("queue_players")
-      .select("id, status, called_at, created_at")
-      .ilike("username", name)
-      .in("status", ["waiting", "called"])
-      .order("created_at", { ascending: false });
-
-    if (checkError) {
-      setMessage("Sıra kontrol edilemedi: " + checkError.message);
+  async function callNextPlayer() {
+    if (players.length === 0) {
+      setMessage("Sırada bekleyen oyuncu yok.");
       return;
     }
 
-    if (existing?.some((player) => player.status === "waiting")) {
-      setMessage("Bu nick zaten sırada.");
-      return;
-    }
-
-    const lastCalled = existing?.find(
-      (player) => player.status === "called" && player.called_at
-    );
-
-    if (lastCalled?.called_at) {
-      const elapsed =
-        Date.now() - new Date(lastCalled.called_at).getTime();
-      const remaining = Math.ceil((60000 - elapsed) / 1000);
-
-      if (remaining > 0) {
-        setMessage(
-          `Bu nick için tekrar sıraya girmek üzere ${remaining} saniye beklemelisin.`
-        );
-        return;
-      }
-    }
+    const nextPlayer = players[0];
 
     const { error } = await supabase
       .from("queue_players")
-      .insert({
-        username: name,
-        platform,
-        time_control: timeControl,
-        status: "waiting",
-      });
+      .update({
+        status: "called",
+        called_at: new Date().toISOString(),
+      })
+      .eq("id", nextPlayer.id)
+      .eq("status", "waiting");
 
     if (error) {
-      setMessage("Sıraya katılınamadı: " + error.message);
+      setMessage("Oyuncu çağrılamadı: " + error.message);
       return;
     }
 
-    setUsername("");
-    setMessage("Başarılı! Sıranın sonuna eklendin. ♟");
-    await loadPlayers();
-  } finally {
-    setJoining(false);
+    setCurrentPlayer(nextPlayer);
+    setPlayers((old) =>
+      old.filter((player) => player.id !== nextPlayer.id)
+    );
+    setMessage("");
   }
-}
 
+  async function joinQueue() {
+    if (joining) return;
 
+    const name = username.trim();
+
+    if (!name) {
+      setMessage("Lütfen kullanıcı adını yaz.");
+      return;
+    }
+
+    setJoining(true);
+    setMessage("");
+
+    try {
+      const { data: existing, error: checkError } = await supabase
+        .from("queue_players")
+        .select("id, status, called_at, created_at")
+        .ilike("username", name)
+        .in("status", ["waiting", "called"])
+        .order("created_at", { ascending: false });
+
+      if (checkError) {
+        setMessage("Sıra kontrol edilemedi: " + checkError.message);
+        return;
+      }
+
+      if (existing?.some((player) => player.status === "waiting")) {
+        setMessage("Bu nick zaten sırada.");
+        return;
+      }
+
+      const lastCalled = existing?.find(
+        (player) => player.status === "called" && player.called_at
+      );
+
+      if (lastCalled?.called_at) {
+        const elapsed =
+          Date.now() - new Date(lastCalled.called_at).getTime();
+        const remaining = Math.ceil((60000 - elapsed) / 1000);
+
+        if (remaining > 0) {
+          setMessage(
+            `Bu nick için tekrar sıraya girmek üzere ${remaining} saniye beklemelisin.`
+          );
+          return;
+        }
+      }
+
+      const { error } = await supabase
+        .from("queue_players")
+        .insert({
+          username: name,
+          platform,
+          time_control: timeControl,
+          status: "waiting",
+        });
+
+      if (error) {
+        setMessage("Sıraya katılınamadı: " + error.message);
+        return;
+      }
+
+      setUsername("");
+      setMessage("Başarılı! Sıranın sonuna eklendin. ♟");
+      await loadPlayers();
+    } finally {
+      setJoining(false);
+    }
+  }
 
   function finishMatch() {
     setCurrentPlayer(null);
@@ -238,10 +233,14 @@ async function joinQueue() {
       <div className="ambient ambient-two" />
 
       <header className="topbar">
-        <a className="brand" href="#" aria-label="SIRA MAT ana sayfa">
+        <a
+          className="brand"
+          href="#"
+          aria-label="SolbekErsin ana sayfa"
+        >
           <span className="brand-icon">♞</span>
           <span>
-            SIRA<span className="brand-accent"> MAT</span>
+            Solbek<span className="brand-accent">Ersin</span>
             <small>CHESS COMMUNITY</small>
           </span>
         </a>
@@ -431,7 +430,8 @@ async function joinQueue() {
                       <div className="eyebrow">ÇAĞRILAN OYUNCU</div>
                       <h3>{currentPlayer.username}</h3>
                       <p>
-                        {currentPlayer.platform} · {currentPlayer.time_control}
+                        {currentPlayer.platform} ·{" "}
+                        {currentPlayer.time_control}
                       </p>
 
                       <a
@@ -446,7 +446,7 @@ async function joinQueue() {
                               )}`
                         }
                         target="_blank"
-                        rel="noreferrer"
+                        rel="noopener noreferrer"
                       >
                         Profili aç ↗
                       </a>
@@ -550,11 +550,57 @@ async function joinQueue() {
       </section>
 
       <footer className="site-footer">
-        <a className="footer-brand" href="#">
-          ♞ SIRA MAT
+        <a
+          className="footer-brand"
+          href="#"
+          aria-label="SolbekErsin ana sayfa"
+        >
+          ♞ SolbekErsin
         </a>
+
         <span>STRATEJİNİ KONUŞTUR.</span>
-        <span>© 2026 SIRA MAT</span>
+
+        <div className="social-links">
+          <a
+            href="https://www.youtube.com/@SolBekErsun"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="SolbekErsin YouTube kanalı"
+            title="YouTube"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.3 3.6-6.3 3.6Z" />
+            </svg>
+            <span>YouTube</span>
+          </a>
+
+          <a
+            href="https://www.tiktok.com/@solbek.ersin"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="SolbekErsin TikTok hesabı"
+            title="TikTok"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="22"
+              height="22"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M19.6 6.1a5.5 5.5 0 0 1-3.4-4.5V1h-4.4v15.2a2.9 2.9 0 1 1-2.9-2.9c.3 0 .6 0 .9.1V9a7.4 7.4 0 1 0 6.4 7.3V8.6a9.8 9.8 0 0 0 5.7 1.8V6a5.5 5.5 0 0 1-2.3.1Z" />
+            </svg>
+            <span>TikTok</span>
+          </a>
+        </div>
+
+        <span>© 2026 SolbekErsin</span>
       </footer>
     </main>
   );
