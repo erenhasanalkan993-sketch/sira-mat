@@ -1,10 +1,14 @@
-
 import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "SolBekErsin",
   description: "Canlı satranç oyuncu sırası",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({
