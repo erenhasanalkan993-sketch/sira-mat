@@ -71,87 +71,108 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  async function callNextPlayer() {
-    if (players.length === 0) {
-      setMessage("Sırada bekleyen oyuncu yok.");
+  
+async function callNextPlayer() {
+  if (players.length === 0) {
+    setMessage("Sırada bekleyen oyuncu yok.");
+    return;
+  }
+
+  const nextPlayer = players[0];
+
+  const { error } = await supabase
+    .from("queue_players")
+    .update({
+      status: "called",
+      called_at: new Date().toISOString(),
+    })
+    .eq("id", nextPlayer.id)
+    .eq("status", "waiting");
+
+  if (error) {
+    setMessage("Oyuncu çağrılamadı: " + error.message);
+    return;
+  }
+
+  setCurrentPlayer(nextPlayer);
+  setPlayers((old) =>
+    old.filter((player) => player.id !== nextPlayer.id)
+  );
+  setMessage("");
+}
+
+
+  
+async function joinQueue() {
+  if (joining) return;
+
+  const name = username.trim();
+
+  if (!name) {
+    setMessage("Lütfen kullanıcı adını yaz.");
+    return;
+  }
+
+  setJoining(true);
+  setMessage("");
+
+  try {
+    const { data: existing, error: checkError } = await supabase
+      .from("queue_players")
+      .select("id, status, called_at")
+      .eq("platform", platform)
+      .ilike("username", name)
+      .in("status", ["waiting", "called"])
+      .order("created_at", { ascending: false });
+
+    if (checkError) {
+      setMessage("Sıra kontrol edilemedi: " + checkError.message);
       return;
     }
 
-    const nextPlayer = players[0];
+    if (existing?.some((player) => player.status === "waiting")) {
+      setMessage("Bu oyuncu zaten sırada.");
+      return;
+    }
+
+    const lastCalled = existing?.find(
+      (player) => player.status === "called" && player.called_at
+    );
+
+    if (lastCalled?.called_at) {
+      const elapsed = Date.now() - new Date(lastCalled.called_at).getTime();
+      const remaining = Math.ceil((60000 - elapsed) / 1000);
+
+      if (remaining > 0) {
+        setMessage(
+          `Tekrar sıraya girmek için ${remaining} saniye beklemelisin.`
+        );
+        return;
+      }
+    }
 
     const { error } = await supabase
       .from("queue_players")
-      .update({ status: "called" })
-      .eq("id", nextPlayer.id)
-      .eq("status", "waiting");
+      .insert({
+        username: name,
+        platform,
+        time_control: timeControl,
+        status: "waiting",
+      });
 
     if (error) {
-      setMessage("Oyuncu çağrılamadı: " + error.message);
+      setMessage("Sıraya katılınamadı: " + error.message);
       return;
     }
 
-    setCurrentPlayer(nextPlayer);
-    setPlayers((old) =>
-      old.filter((player) => player.id !== nextPlayer.id)
-    );
-    setMessage("");
+    setUsername("");
+    setMessage("Başarılı! Sıranın sonuna eklendin. ♟");
+    await loadPlayers();
+  } finally {
+    setJoining(false);
   }
+}
 
-  async function joinQueue() {
-    if (joining) return;
-
-    const name = username.trim();
-
-    if (!name) {
-      setMessage("Lütfen kullanıcı adını yaz.");
-      return;
-    }
-
-    setJoining(true);
-    setMessage("");
-
-    try {
-      const { data: existing, error: checkError } = await supabase
-        .from("queue_players")
-        .select("id")
-        .eq("platform", platform)
-        .ilike("username", name)
-        .in("status", ["waiting", "called"])
-        .limit(1);
-
-      if (checkError) {
-        console.error(checkError.message);
-        setMessage("Sıra kontrol edilemedi. Tekrar dene.");
-        return;
-      }
-
-      if (existing && existing.length > 0) {
-        setMessage("Bu oyuncu zaten sırada veya çağrılmış.");
-        return;
-      }
-
-      const { error } = await supabase
-        .from("queue_players")
-        .insert({
-          username: name,
-          platform,
-          time_control: timeControl,
-          status: "waiting",
-        });
-
-      if (error) {
-        console.error(error.message);
-        setMessage("Sıraya katılınamadı. Tekrar dene.");
-        return;
-      }
-
-      setUsername("");
-      setMessage("Başarılı! Sıraya katıldın. ♟");
-      await loadPlayers();
-    } finally {
-      setJoining(false);
-    }
-  }
 
   function finishMatch() {
     setCurrentPlayer(null);
