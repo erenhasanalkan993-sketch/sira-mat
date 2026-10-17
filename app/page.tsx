@@ -3,13 +3,26 @@
 
 import { useState } from "react";
 
+type TimeControl = "1+0" | "3+0" | "3+2" | "5+0" | "10+0" | "15+10";
+
 type Player = {
   id: number;
   name: string;
+  timeControl: TimeControl;
 };
+
+const timeControls: { value: TimeControl; label: string }[] = [
+  { value: "1+0", label: "1+0" },
+  { value: "3+0", label: "3+0 · Popüler" },
+  { value: "3+2", label: "3+2" },
+  { value: "5+0", label: "5+0" },
+  { value: "10+0", label: "10+0" },
+  { value: "15+10", label: "15+10" },
+];
 
 export default function Page() {
   const [name, setName] = useState("");
+  const [timeControl, setTimeControl] = useState<TimeControl>("3+0");
   const [players, setPlayers] = useState<Player[]>([]);
   const [adminMode, setAdminMode] = useState(false);
   const [notice, setNotice] = useState("");
@@ -35,11 +48,15 @@ export default function Page() {
 
     setPlayers((current) => [
       ...current,
-      { id: Date.now(), name: cleanName },
+      {
+        id: Date.now(),
+        name: cleanName,
+        timeControl,
+      },
     ]);
 
     setName("");
-    setNotice("Sıraya başarıyla katıldın.");
+    setNotice(`${cleanName}, ${timeControl} süresiyle sıraya katıldı.`);
   }
 
   function removePlayer(id: number) {
@@ -130,8 +147,7 @@ export default function Page() {
           </h1>
 
           <p className="hero-description">
-            Satranç oyun sırasına katıl, sıranı takip et ve oyun zamanı
-            geldiğinde hazır ol.
+            Satranç oyun sırasına katıl, oyun süreni seç ve sıranı takip et.
           </p>
         </div>
       </section>
@@ -160,7 +176,10 @@ export default function Page() {
                     {String(index + 1).padStart(2, "0")}
                   </span>
 
-                  <span className="player-name">{player.name}</span>
+                  <div className="player-details">
+                    <span className="player-name">{player.name}</span>
+                    <span className="player-time">{player.timeControl}</span>
+                  </div>
 
                   {adminMode && (
                     <div className="player-actions">
@@ -209,7 +228,7 @@ export default function Page() {
           <h2>Sıraya katıl</h2>
 
           <p className="panel-description">
-            İsmini yaz ve oyun sırasındaki yerini al.
+            İsmini yaz, oyun süreni seç ve sıradaki yerini al.
           </p>
 
           <form
@@ -230,6 +249,25 @@ export default function Page() {
               maxLength={40}
               autoComplete="name"
             />
+
+            <label htmlFor="time-control" className="time-control-label">
+              Blitz oyun süresi
+            </label>
+
+            <select
+              id="time-control"
+              className="time-control-select"
+              value={timeControl}
+              onChange={(event) =>
+                setTimeControl(event.target.value as TimeControl)
+              }
+            >
+              {timeControls.map((control) => (
+                <option key={control.value} value={control.value}>
+                  {control.label}
+                </option>
+              ))}
+            </select>
 
             <button type="submit" className="primary-button">
               Sıraya katıl <span aria-hidden="true">→</span>

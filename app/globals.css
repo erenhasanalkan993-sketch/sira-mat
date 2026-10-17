@@ -364,6 +364,53 @@ textarea:focus-visible {
   box-shadow: 0 0 0 3px rgba(180, 255, 112, 0.07);
 }
 
+/* Blitz oyun süresi alanı */
+
+.join-form .time-control-label {
+  display: block;
+  margin: 21px 0 10px;
+  color: #d6dfd5;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.time-control-select {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  margin: 0;
+  padding: 0 12px;
+  color: #edf5eb;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  background-color: #0a0e0b;
+  font-size: 13px;
+  line-height: 1.5;
+  cursor: pointer;
+  transition:
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    background 200ms ease;
+}
+
+.time-control-select:hover {
+  border-color: rgba(180, 255, 112, 0.25);
+}
+
+.time-control-select:focus {
+  border-color: rgba(180, 255, 112, 0.7);
+  outline: none;
+  background-color: #0c110d;
+  box-shadow: 0 0 0 3px rgba(180, 255, 112, 0.07);
+}
+
+.time-control-select option {
+  color: #edf5eb;
+  background: #101511;
+}
+
 .primary-button {
   display: flex;
   align-items: center;
@@ -372,7 +419,7 @@ textarea:focus-visible {
   width: 100%;
   min-width: 0;
   min-height: 49px;
-  margin: 18px 0 0;
+  margin: 19px 0 0;
   padding: 12px 17px;
   color: #0b1108;
   border: 1px solid #c2ff8b;
@@ -537,14 +584,48 @@ textarea:focus-visible {
   font-variant-numeric: tabular-nums;
 }
 
+/* Oyuncu adı ve Blitz etiketi */
+
+.player-details {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
 .player-name {
+  display: block;
   flex: 1 1 auto;
   min-width: 0;
+  max-width: 100%;
   color: #e9f0e7;
   font-size: 13px;
   font-weight: 700;
   line-height: 1.6;
   overflow-wrap: anywhere;
+}
+
+.player-details .player-name {
+  width: 100%;
+}
+
+.player-time {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 3px 8px;
+  color: var(--green);
+  border: 1px solid rgba(180, 255, 112, 0.16);
+  border-radius: 6px;
+  background: rgba(180, 255, 112, 0.05);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.4;
+  white-space: nowrap;
 }
 
 .player-actions {
@@ -757,9 +838,18 @@ textarea:focus-visible {
     font-size: 13px;
   }
 
+  .join-form .time-control-label {
+    margin-top: 19px;
+  }
+
+  .time-control-select {
+    min-height: 47px;
+    font-size: 13px;
+  }
+
   .primary-button {
     min-height: 48px;
-    margin-top: 16px;
+    margin-top: 17px;
   }
 
   .panel-heading {
@@ -790,6 +880,12 @@ textarea:focus-visible {
 
   .player-name {
     font-size: 12px;
+  }
+
+  .player-time {
+    min-height: 21px;
+    padding: 3px 7px;
+    font-size: 9px;
   }
 
   .player-actions {
