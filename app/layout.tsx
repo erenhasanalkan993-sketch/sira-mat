@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "SIRA MAT",
+  title: "SolBekErsin",
   description: "Canlı satranç oyuncu sırası",
 };
 
